@@ -1,0 +1,19 @@
+{
+  "name": "pear-rpc",
+  "version": "0.0.0",
+  "description": "RPC for Pear",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Holepunch",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "streamx": "^2.16.1",
+    "tiny-buffer-rpc": "^2.0.1"
+  },
+  "devDependencies": {
+    "brittle": "^3.4.0"
+  }
+}
