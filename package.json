@@ -15,5 +15,13 @@
   },
   "devDependencies": {
     "brittle": "^3.4.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/holepunchto/pear-rpc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/holepunchto/pear-rpc/issues"
+  },
+  "homepage": "https://github.com/holepunchto/pear-rpc#readme"
 }
