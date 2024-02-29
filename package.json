@@ -11,10 +11,12 @@
   "license": "Apache-2.0",
   "dependencies": {
     "bare-fs": "^2.2.0",
+    "bare-path": "^2.1.0",
     "bare-pipe": "^2.0.4",
     "framed-stream": "^1.0.1",
     "fs": "npm:bare-node-fs",
     "fs-native-extensions": "^1.2.7",
+    "path": "npm:bare-node-path",
     "protomux": "^3.5.1",
     "ready-resource": "^1.0.3",
     "streamx": "^2.16.1",

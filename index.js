@@ -18,7 +18,7 @@ class PearRPC extends ReadyResource {
     this._opts = opts
     this._socketPath = opts.socketPath
     this._handlers = opts.handlers || {}
-    this._methods = opts.methods ? [ ...methods, ...opts.methods ] : methods
+    this._methods = opts.methods ? [...methods, ...opts.methods] : methods
     this._methods = Object.entries(this._methods.map((m) => typeof m === 'string' ? { name: m } : m))
     this._api = opts.api || {}
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
@@ -28,6 +28,7 @@ class PearRPC extends ReadyResource {
     this.server = null
     this.pipe = null
     this.stream = opts.stream || null
+    this.userData = opts.userData || null
   }
 
   ref () {
@@ -39,6 +40,7 @@ class PearRPC extends ReadyResource {
     this.stream?.stream?.rawStream?.unref()
     this.server?.unref()
   }
+
   async _open () {
     if (this.stream === null) {
       if (this._tryboot) await this._connect()
@@ -79,7 +81,8 @@ class PearRPC extends ReadyResource {
     this.server.on('connection', (pipe) => {
       const framed = new FramedStream(pipe)
       const stream = new Protomux(framed)
-      this.emit('instance', new this.constructor({ ...this._opts, handlers: null, stream }))
+      const client = new this.constructor({ ...this._opts, handlers: null, stream })
+      this.emit('client', client)
     })
   }
 
