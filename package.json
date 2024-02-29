@@ -4,14 +4,22 @@
   "description": "RPC for Pear",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "brittle test.js"
   },
   "keywords": [],
   "author": "Holepunch",
   "license": "Apache-2.0",
   "dependencies": {
+    "bare-fs": "^2.2.0",
+    "bare-pipe": "^2.0.4",
+    "framed-stream": "^1.0.1",
+    "fs": "npm:bare-node-fs",
+    "fs-native-extensions": "^1.2.7",
+    "protomux": "^3.5.1",
+    "ready-resource": "^1.0.3",
     "streamx": "^2.16.1",
-    "tiny-buffer-rpc": "^2.0.1"
+    "tiny-buffer-rpc": "^2.0.1",
+    "which-runtime": "^1.2.0"
   },
   "devDependencies": {
     "brittle": "^3.4.0"

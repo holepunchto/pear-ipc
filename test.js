@@ -36,7 +36,8 @@ test('rpc request', async (t) => {
       }
     })
   })
-
+  await server.ready()
+  await client.ready()
   t.is(await client.test({ result: 'good' }), 'good')
 })
 
@@ -83,7 +84,8 @@ test('rpc request api wrapped', async (t) => {
       }
     })
   })
-
+  await server.ready()
+  await client.ready()
   t.is(await client.test({ result: 'good' }), 'very good')
 })
 
@@ -128,7 +130,8 @@ test('rpc stream', async (t) => {
       }
     })
   })
-
+  await server.ready()
+  await client.ready()
   const stream = client.test({ result: 'good' })
   let count = 0
   for await (const data of stream) {
@@ -139,11 +142,9 @@ test('rpc stream', async (t) => {
       t.is(data, 'good')
       break
     }
-    
   }
   stream.end()
 })
-
 
 test('rpc stream api wrapped', async (t) => {
   t.plan(4)
@@ -166,7 +167,6 @@ test('rpc stream api wrapped', async (t) => {
     },
     other () {}
   }
-
 
   const api = {
     test (method) {
@@ -198,7 +198,8 @@ test('rpc stream api wrapped', async (t) => {
       }
     })
   })
-
+  await server.ready()
+  await client.ready()
   const stream = client.test({ result: 'good' })
   let count = 0
   for await (const data of stream) {
@@ -209,7 +210,6 @@ test('rpc stream api wrapped', async (t) => {
       t.is(data, 'very good')
       break
     }
-    
   }
   stream.end()
 })
@@ -254,7 +254,8 @@ test('rpc send', async (t) => {
       }
     })
   })
-
+  await server.ready()
+  await client.ready()
   const stream = client.response()
   client.test(({ result: 'good' }))
   let count = 0
@@ -266,11 +267,9 @@ test('rpc send', async (t) => {
       t.is(data, 'good')
       break
     }
-    
   }
   stream.end()
 })
-
 
 test('rpc send api wrapped', async (t) => {
   t.plan(4)
@@ -321,7 +320,8 @@ test('rpc send api wrapped', async (t) => {
       }
     })
   })
-
+  await server.ready()
+  await client.ready()
   const stream = client.response()
   client.test(({ result: 'good' }))
   let count = 0
@@ -333,7 +333,6 @@ test('rpc send api wrapped', async (t) => {
       t.is(data, 'very good')
       break
     }
-    
   }
   stream.end()
 })
