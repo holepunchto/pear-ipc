@@ -3,8 +3,6 @@ const { isBare, isWindows } = require('which-runtime')
 const Pipe = isBare ? require('bare-pipe') : require('net')
 const fs = require('fs')
 const streamx = require('streamx')
-const FramedStream = require('framed-stream')
-const Protomux = require('protomux')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
 const ReadyResource = require('ready-resource')
@@ -28,18 +26,15 @@ class PearRPC extends ReadyResource {
     this._sc = null
     this.id = -1
     this.server = null
-    this.pipe = null
     this.stream = opts.stream || null
     this.userData = opts.userData || null
   }
 
   ref () {
-    this.stream?.stream?.rawStream?.ref()
     this.server?.ref()
   }
 
   unref () {
-    this.stream?.stream?.rawStream?.unref()
     this.server?.unref()
   }
 
@@ -51,7 +46,7 @@ class PearRPC extends ReadyResource {
     if (this.server) {
       try {
         if (!isWindows) await fs.promises.unlink(this._socketPath)
-      } catch {} 
+      } catch {}
       return this.server.listen(this._socketPath)
     }
     this._register()
@@ -97,9 +92,7 @@ class PearRPC extends ReadyResource {
 
   _serve () {
     this.server = Pipe.createServer()
-    this.server.on('connection', (pipe) => {
-      const framed = new FramedStream(pipe)
-      const stream = new Protomux(framed)
+    this.server.on('connection', (stream) => {
       const client = new this.constructor({ ...this._opts, handlers: null, stream })
       this.emit('client', client)
     })
@@ -124,23 +117,23 @@ class PearRPC extends ReadyResource {
     }, this._connectTimeout)
 
     const onerror = () => {
-      this.pipe.removeListener('error', onerror)
-      this.pipe.removeListener('connect', onconnect)
+      this.stream.removeListener('error', onerror)
+      this.stream.removeListener('connect', onconnect)
       next(false)
     }
 
     const onconnect = () => {
-      this.pipe.removeListener('error', onerror)
-      this.pipe.removeListener('connect', onconnect)
+      this.stream.removeListener('error', onerror)
+      this.stream.removeListener('connect', onconnect)
       clearTimeout(timeout)
       next(true)
     }
 
     while (true) {
       const promise = new Promise((resolve) => { next = resolve })
-      this.pipe = this._pipe(this._socketPath)
-      this.pipe.on('connect', onconnect)
-      this.pipe.on('error', onerror)
+      this.stream = this._pipe(this._socketPath)
+      this.stream.on('connect', onconnect)
+      this.stream.on('error', onerror)
 
       if (await promise) break
       if (timedout) throw new Error('Could not connect in time')
@@ -151,14 +144,11 @@ class PearRPC extends ReadyResource {
 
     clearTimeout(timeout)
 
-    this.pipe.once('close', () => this.close())
-    const framed = new FramedStream(this.pipe)
-    this.stream = new Protomux(framed)
+    this.stream.once('close', () => this.close())
   }
 
   _close () {
-    this.stream?.stream?.end()
-    this.stream?.stream?.rawStream?.destroy()
+    this.stream?.end()
     this.server?.close()
     return this.server?.closing
   }
