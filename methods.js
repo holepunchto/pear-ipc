@@ -1,7 +1,7 @@
 'use strict'
 
 const stream = (name) => ({ name, stream: true })
-
+const send = (name) => ({ name, send: true })
 const methods = [
   stream('info'),
   stream('dump'),
@@ -11,6 +11,7 @@ const methods = [
   stream('messages'),
   'message',
   'config',
+  stream('reconfig'),
   'checkpoint',
   'versions',
   'address',
@@ -18,11 +19,22 @@ const methods = [
   'trust',
   'identify',
   'wakeup',
+  'warming',
+  'warmup',
   'start',
   'restart',
   'unloading',
-  'shutdown',
-  'closeClients'
+  'closeClients',
+  'createReport',
+  stream('reports'),
+  send('shutdown'),
+
+  // deprecated, assess for removal from May 2024
+  'setPreference',
+  'getPreference',
+  stream('iteratePreferences'),
+  stream('preferencesUpdates')
+
 ]
 
 module.exports = methods

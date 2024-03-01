@@ -25,6 +25,7 @@ class PearRPC extends ReadyResource {
     this._tryboot = opts.tryboot || null
     this._rpc = null
     this._sc = null
+    this.id = -1
     this.server = null
     this.pipe = null
     this.stream = opts.stream || null
@@ -70,9 +71,21 @@ class PearRPC extends ReadyResource {
       this[def.name] = api(this._rpc.register(+id, {
         request: any,
         response: any,
-        onrequest: def.stream ? null : fn,
-        onstream: def.stream ? createOnStream(fn) : null
+        onrequest: def.stream ? null : (params) => fn(params, this),
+        onstream: def.stream ? this._createOnStream(fn) : null
       }), this)
+    }
+  }
+
+  _createOnStream (fn) {
+    if (fn === null) return null
+    return async (stream) => {
+      try {
+        stream.on('error', noop)
+        for await (const params of stream) streamx.pipeline(streamx.Readable.from(fn(params, this)), stream)
+      } catch (err) {
+        stream.destroy(err)
+      }
     }
   }
 
@@ -142,18 +155,6 @@ class PearRPC extends ReadyResource {
     this.stream?.stream?.rawStream?.destroy()
     this.server?.close()
     return this.server?.closing
-  }
-}
-
-function createOnStream (fn) {
-  if (fn === null) return null
-  return async function onstream (stream) {
-    try {
-      stream.on('error', noop)
-      for await (const params of stream) streamx.pipeline(fn(params), stream)
-    } catch (err) {
-      stream.destroy(err)
-    }
   }
 }
 

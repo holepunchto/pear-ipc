@@ -214,6 +214,59 @@ test('rpc stream api wrapped', async (t) => {
   stream.end()
 })
 
+test('rpc stream from async iterator handler', async (t) => {
+  t.plan(4)
+
+  const methods = [{ name: 'test', stream: true }, 'more']
+
+  const handlers = {
+    someother () { },
+    async * test (params) {
+      t.is(params.result, 'good')
+      yield 'ex'
+      await null
+      yield 'streamly'
+      await null
+      yield params.result
+    },
+    other () {}
+  }
+
+  const server = new RPC({
+    methods,
+    handlers,
+    stream: new streamx.Duplex({
+      write (data, cb) {
+        client.stream.push(data)
+        cb()
+      }
+    })
+  })
+  const client = new RPC({
+    methods,
+    stream: new streamx.Duplex({
+      write (data, cb) {
+        server.stream.push(data)
+        cb()
+      }
+    })
+  })
+  await server.ready()
+  await client.ready()
+  const stream = client.test({ result: 'good' })
+  let count = 0
+  for await (const data of stream) {
+    count += 1
+    if (count === 1) t.is(data, 'ex')
+    if (count === 2) t.is(data, 'streamly')
+    if (count === 3) {
+      t.is(data, 'good')
+      break
+    }
+  }
+  stream.end()
+})
+
 test('rpc send', async (t) => {
   t.plan(4)
 
