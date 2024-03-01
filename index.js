@@ -1,6 +1,7 @@
 'use strict'
-const { isBare } = require('which-runtime')
+const { isBare, isWindows } = require('which-runtime')
 const Pipe = isBare ? require('bare-pipe') : require('net')
+const fs = require('fs')
 const streamx = require('streamx')
 const FramedStream = require('framed-stream')
 const Protomux = require('protomux')
@@ -47,7 +48,14 @@ class PearRPC extends ReadyResource {
       if (this._tryboot) await this._connect()
       else this._serve()
     }
-    if (this.server) return
+    if (this.server) {
+      try {
+        if (!isWindows) await fs.promises.unlink(this._socketPath)
+      } finally {
+        await this.server.listen(this._socketPath)
+      }
+      return
+    }
     this._register()
   }
 

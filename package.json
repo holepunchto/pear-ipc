@@ -10,7 +10,7 @@
   "author": "Holepunch",
   "license": "Apache-2.0",
   "dependencies": {
-    "bare-fs": "^2.2.0",
+    "bare-fs": "^2.2.1",
     "bare-path": "^2.1.0",
     "bare-pipe": "^2.0.4",
     "framed-stream": "^1.0.1",
