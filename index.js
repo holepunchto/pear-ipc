@@ -51,10 +51,8 @@ class PearRPC extends ReadyResource {
     if (this.server) {
       try {
         if (!isWindows) await fs.promises.unlink(this._socketPath)
-      } finally {
-        await this.server.listen(this._socketPath)
-      }
-      return
+      } catch {} 
+      return this.server.listen(this._socketPath)
     }
     this._register()
   }
