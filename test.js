@@ -1,8 +1,10 @@
 'use strict'
+const fs = require('fs')
+const path = require('path')
 const test = require('brittle')
 const streamx = require('streamx')
 const RPC = require('.')
-
+const noop = Function.prototype
 test('rpc request', async (t) => {
   t.plan(2)
 
@@ -388,4 +390,39 @@ test('rpc send api wrapped', async (t) => {
     }
   }
   stream.end()
+})
+
+test('rpc request over socket with tryboot bootstrap', async (t) => {
+  const socketPath = path.join(__dirname, 'test.sock')
+
+  t.teardown(() => fs.promises.unlink(socketPath).catch(noop))
+
+  const methods = ['test', 'more']
+
+  const handlers = {
+    someother () { },
+    test (params) {
+      t.is(params.result, 'good')
+      return params.result
+    },
+    other () {}
+  }
+
+  const client = new RPC({
+    methods,
+    socketPath,
+    async tryboot () {
+      const server = new RPC({
+        methods,
+        handlers,
+        socketPath
+      })
+      t.teardown(() => server.close())
+      await server.ready()
+    }
+  })
+  t.teardown(() => client.close())
+  await client.ready()
+
+  t.is(await client.test({ result: 'good' }), 'good')
 })

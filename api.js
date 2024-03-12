@@ -1,13 +1,10 @@
 'use strict'
-const PearRPC = require('.')
-const path = require('path')
+const fs = require('fs')
+const fsext = require('fs-native-extensions')
+
 class API {
   constructor (lock) {
     this.lock = lock
-  }
-
-  start (method) {
-    return (...args) => method.request({ args })
   }
 
   wakeup (method) {
@@ -18,8 +15,6 @@ class API {
     return async () => {
       method.send()
       if (!this.lock) return
-      const fs = require('fs')
-      const fsext = require('fs-native-extensions')
       const fd = await new Promise((resolve, reject) => fs.open(this.lock, 'r+', (err, fd) => {
         if (err) {
           reject(err)
@@ -41,14 +36,4 @@ class API {
   }
 }
 
-class PearClient extends PearRPC {
-  constructor (opts = {}) {
-    const pearDir = global.Pear?.config.pearDir || opts.pearDir
-    const lock = pearDir ? path.join(pearDir, 'corestores', 'platform', 'primary-key') : null
-    const api = new API(lock)
-    opts.api = opts.api ? { ...api, ...opts.api } : api
-    super(opts)
-  }
-}
-
-module.exports = PearClient
+module.exports = API
