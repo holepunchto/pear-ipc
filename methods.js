@@ -19,7 +19,7 @@ const methods = [
   'trust',
   'identify',
   'wakeup',
-  'warming',
+  stream('warming'),
   'warmup',
   'start',
   'restart',

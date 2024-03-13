@@ -35,6 +35,7 @@ class PearRPC extends ReadyResource {
     this.server = null
     this.stream = opts.stream || null
     this.userData = opts.userData || null
+    this.unhandled = opts.unhandled || (() => { throw new Error('unhandled') })
   }
 
   get clients () { return this._clients.alloced.filter(Boolean) }
@@ -63,20 +64,23 @@ class PearRPC extends ReadyResource {
 
   _register () {
     for (const [id, def] of this._methods) {
-      const fn = this._handlers[def.name] || null
+      const fn = this._handlers[def.name]
       const api = this._api[def.name] || (
         def.send
-          ? (method) => (params) => method.send(params)
+          ? (method) => fn ? (params = {}) => fn.call(this._handlers, params, this) : (params) => method.send(params)
           : (def.stream
-              ? (method) => (params) => {
-                  const stream = method.createRequestStream()
-                  stream.write(params)
-                  return stream
-                }
-              : (method) => (params = {}) => {
-                  const m = method.request(params)
-                  return m
-                }
+              ? (method) => fn
+                  ? (params = {}) => fn.call(this._handlers, params, this)
+                  : (params = {}) => {
+                      const stream = method.createRequestStream()
+                      stream.write(params)
+                      return stream
+                    }
+              : (method) => fn
+                  ? (params = {}) => fn.call(this._handlers, params, this)
+                  : (params = {}) => {
+                      return method.request(params)
+                    }
             )
       )
       this[def.name] = api(this._rpc.register(+id, {
@@ -85,15 +89,16 @@ class PearRPC extends ReadyResource {
         onrequest: def.stream
           ? null
           : (params) => {
-              return fn.call(this._handlers, params, this)
+              console.log(def, params, fn + '')
+              return fn ? fn.call(this._handlers, params, this) : this.unhandled(def, params)
             },
-        onstream: def.stream ? this._createOnStream(fn) : null
+        onstream: def.stream ? this._createOnStream(fn, (params) => this.unhandled(def, params)) : null
       }), this).bind(this._api)
     }
   }
 
-  _createOnStream (fn) {
-    if (fn === null) return null
+  _createOnStream (fn, unhandled) {
+    if (fn === null) fn = unhandled
     return async (stream) => {
       try {
         stream.on('error', noop)
