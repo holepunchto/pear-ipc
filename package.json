@@ -1,7 +1,7 @@
 {
-  "name": "pear-rpc",
-  "version": "0.0.7",
-  "description": "RPC for Pear",
+  "name": "pear-ipc",
+  "version": "0.0.0",
+  "description": "IPC for Pear",
   "main": "index.js",
   "scripts": {
     "test": "brittle test.js"
@@ -26,10 +26,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/holepunchto/pear-rpc.git"
+    "url": "git+https://github.com/holepunchto/pear-ipc.git"
   },
   "bugs": {
-    "url": "https://github.com/holepunchto/pear-rpc/issues"
+    "url": "https://github.com/holepunchto/pear-ipc/issues"
   },
-  "homepage": "https://github.com/holepunchto/pear-rpc#readme"
+  "homepage": "https://github.com/holepunchto/pear-ipc#readme"
 }

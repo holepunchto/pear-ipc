@@ -34,7 +34,6 @@ class PearRPC extends ReadyResource {
     this.id = -1
     this.server = null
     this.stream = opts.stream || null
-    this.userData = opts.userData || null
     this.unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
   }
 
