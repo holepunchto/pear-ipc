@@ -14,6 +14,7 @@ const CONNECT_TIMEOUT = 20_000
 const noop = Function.prototype
 
 class PearRPC extends ReadyResource {
+  #connect = null
   constructor (opts = {}) {
     super()
     const pearDir = global.Pear?.config.pearDir || opts.pearDir
@@ -23,11 +24,10 @@ class PearRPC extends ReadyResource {
     this._opts = opts
     this._socketPath = opts.socketPath
     this._handlers = opts.handlers || {}
-    const _methods = opts.methods ? [...methods, ...opts.methods] : methods
-    this._methods = Object.entries(_methods.map((m) => typeof m === 'string' ? { name: m } : m))
+    this._methods = opts.methods ? [...methods, ...opts.methods] : methods
     this._api = opts.api || {}
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
-    this._tryboot = opts.tryboot || null
+    this.#connect = opts.connect || null
     this._sc = null
     this._rpc = null
     this._clients = new Freelist()
@@ -35,7 +35,7 @@ class PearRPC extends ReadyResource {
     this.server = null
     this.stream = opts.stream || null
     this.userData = opts.userData || null
-    this.unhandled = opts.unhandled || (() => { throw new Error('unhandled') })
+    this.unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
   }
 
   get clients () { return this._clients.alloced.filter(Boolean) }
@@ -46,7 +46,7 @@ class PearRPC extends ReadyResource {
 
   async _open () {
     if (this.stream === null) {
-      if (this._tryboot) await this._connect()
+      if (this.#connect) await this._connect()
       else this._serve()
     }
     if (this.server) {
@@ -63,11 +63,15 @@ class PearRPC extends ReadyResource {
   }
 
   _register () {
-    for (const [id, def] of this._methods) {
-      const fn = this._handlers[def.name]
+    for (const { id, ...def } of this._methods) {
+      const fn = this._handlers[def.name] || null
       const api = this._api[def.name] || (
         def.send
-          ? (method) => fn ? (params = {}) => fn.call(this._handlers, params, this) : (params) => method.send(params)
+          ? (method) => fn
+              ? (params = {}) => fn.call(this._handlers, params, this)
+              : (params) => {
+                  return method.send(params)
+                }
           : (def.stream
               ? (method) => fn
                   ? (params = {}) => fn.call(this._handlers, params, this)
@@ -89,7 +93,6 @@ class PearRPC extends ReadyResource {
         onrequest: def.stream
           ? null
           : (params) => {
-              console.log(def, params, fn + '')
               return fn ? fn.call(this._handlers, params, this) : this.unhandled(def, params)
             },
         onstream: def.stream ? this._createOnStream(fn, (params) => this.unhandled(def, params)) : null
@@ -102,7 +105,9 @@ class PearRPC extends ReadyResource {
     return async (stream) => {
       try {
         stream.on('error', noop)
-        for await (const params of stream) streamx.pipeline(streamx.Readable.from(fn.call(this._handlers, params, this)), stream)
+        for await (const params of stream) {
+          streamx.pipeline(streamx.Readable.from(fn.call(this._handlers, params, this)), stream)
+        }
       } catch (err) {
         stream.destroy(err)
       }
@@ -161,7 +166,7 @@ class PearRPC extends ReadyResource {
 
       if (await promise) break
       if (timedout) throw new Error('Could not connect in time')
-      if (trycount++ === 0) this._tryboot()
+      if (trycount++ === 0 && typeof this.#connect === 'function') this.#connect()
 
       await new Promise((resolve) => setTimeout(resolve, trycount < 2 ? 5 : trycount < 10 ? 10 : 100))
     }
@@ -172,12 +177,12 @@ class PearRPC extends ReadyResource {
   }
 
   unref () {
-    this.stream?.unref()
+    if (this.stream?.unref) this.stream.unref()
     this.server?.unref()
   }
 
   ref () {
-    this.stream?.ref()
+    if (this.stream?.ref) this.stream.ref()
     this.server?.ref()
   }
 
