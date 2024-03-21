@@ -7,6 +7,7 @@ const streamx = require('streamx')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
 const ReadyResource = require('ready-resource')
+const FramedStream = require('framed-stream')
 const API = require('./api')
 const methods = require('./methods')
 
@@ -33,7 +34,8 @@ class PearRPC extends ReadyResource {
     this._clients = new Freelist()
     this.id = -1
     this.server = null
-    this.stream = opts.stream || null
+    this.rawStream = opts.stream || null
+    this.stream = null
     this.unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
   }
 
@@ -44,20 +46,37 @@ class PearRPC extends ReadyResource {
   client (id) { return this._clients.from(id) || null }
 
   async _open () {
-    if (this.stream === null) {
+    if (this.rawStream === null) {
       if (this.#connect) await this._connect()
       else this._serve()
     }
+
+    if (this.closing) return
+
     if (this.server) {
       try {
         if (!isWindows) await fs.promises.unlink(this._socketPath)
       } catch {}
-      return this.server.listen(this._socketPath)
+      if (this.closing) return
+      await this.server.listen(this._socketPath)
+      return
     }
-    this._rpc = new RPC((data) => { this.stream.write(data) })
+
+    this.stream = new FramedStream(this.rawStream)
+
+    this._rpc = new RPC((data) => {
+      this.stream.write(data)
+    })
+
     this.stream.on('data', (data) => {
       this._rpc.recv(data)
     })
+
+    const onclose = this.close.bind(this)
+
+    this.stream.on('error', onclose)
+    this.stream.on('close', onclose)
+
     this._register()
   }
 
@@ -145,23 +164,23 @@ class PearRPC extends ReadyResource {
     }, this._connectTimeout)
 
     const onerror = () => {
-      this.stream.removeListener('error', onerror)
-      this.stream.removeListener('connect', onconnect)
+      this.rawStream.removeListener('error', onerror)
+      this.rawStream.removeListener('connect', onconnect)
       next(false)
     }
 
     const onconnect = () => {
-      this.stream.removeListener('error', onerror)
-      this.stream.removeListener('connect', onconnect)
+      this.rawStream.removeListener('error', onerror)
+      this.rawStream.removeListener('connect', onconnect)
       clearTimeout(this.timeout)
       next(true)
     }
 
-    while (true) {
+    while (!this.closing) {
       const promise = new Promise((resolve) => { next = resolve })
-      this.stream = this._pipe(this._socketPath)
-      this.stream.on('connect', onconnect)
-      this.stream.on('error', onerror)
+      this.rawStream = this._pipe(this._socketPath)
+      this.rawStream.on('connect', onconnect)
+      this.rawStream.on('error', onerror)
 
       if (await promise) break
       if (timedout) throw new Error('Could not connect in time')
@@ -172,22 +191,30 @@ class PearRPC extends ReadyResource {
 
     clearTimeout(this.timeout)
 
-    this.stream.once('close', () => this.close())
+    if (this.closing) {
+      if (this.rawStream) this.rawStream.destroy()
+      return
+    }
+
+    const onclose = this.close.bind(this)
+
+    this.rawStream.on('error', onclose)
+    this.rawStream.on('close', onclose)
   }
 
   unref () {
-    if (this.stream?.unref) this.stream.unref()
+    if (this.rawStream?.unref) this.rawStream.unref()
     this.server?.unref()
   }
 
   ref () {
-    if (this.stream?.ref) this.stream.ref()
+    if (this.rawStream?.ref) this.rawStream.ref()
     this.server?.ref()
   }
 
   _close () {
     clearTimeout(this.timeout)
-    this.stream?.destroy()
+    this.rawStream?.destroy()
     return this.server && new Promise((resolve) => {
       this.server.close(() => {
         resolve()
