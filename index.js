@@ -41,7 +41,7 @@ class PearIPC extends ReadyResource {
 
   get clients () { return this._clients.alloced.filter(Boolean) }
 
-  get clientless () { return this._clients.emptied() }
+  get hasClients () { return !this._clients.emptied() }
 
   client (id) { return this._clients.from(id) || null }
 
@@ -138,6 +138,7 @@ class PearIPC extends ReadyResource {
     this.server.on('connection', async (stream) => {
       const client = new this.constructor({ ...this._opts, stream })
       client.id = this._clients.alloc(client)
+      stream.once('end', () => { client.close().finally(() => client.emit('close')) })
       client.once('close', () => { this._clients.free(client.id) })
       await client.ready()
       this.emit('client', client)

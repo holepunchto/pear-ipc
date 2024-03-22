@@ -22,9 +22,7 @@ class API {
         }
         resolve(fd)
       }))
-
       await fsext.waitForLock(fd)
-
       await new Promise((resolve, reject) => fs.close(fd, (err) => {
         if (err) {
           reject(err)
