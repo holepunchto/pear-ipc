@@ -14,7 +14,7 @@ const methods = require('./methods')
 const CONNECT_TIMEOUT = 20_000
 const noop = Function.prototype
 
-class PearRPC extends ReadyResource {
+class PearIPC extends ReadyResource {
   #connect = null
   constructor (opts = {}) {
     super()
@@ -37,6 +37,7 @@ class PearRPC extends ReadyResource {
     this.rawStream = opts.stream || null
     this.stream = null
     this.unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
+    this.userData = opts.userData || null
   }
 
   get clients () { return this._clients.alloced.filter(Boolean) }
@@ -136,7 +137,7 @@ class PearRPC extends ReadyResource {
     this.server = Pipe.createServer()
     this.server.on('connection', async (stream) => {
       const client = new this.constructor({ ...this._opts, stream })
-      client.id = this._clients.nextId()
+      client.id = this._clients.alloc(client)
       client.once('close', () => { this._clients.free(client.id) })
       await client.ready()
       this.emit('client', client)
@@ -216,7 +217,14 @@ class PearRPC extends ReadyResource {
     clearTimeout(this.timeout)
     this.rawStream?.destroy()
     return this.server && new Promise((resolve) => {
-      this.server.close(() => {
+      const closingClients = []
+      for (const client of this._clients) {
+        const close = client.close()
+        close.catch(noop)
+        closingClients.push(close)
+      }
+      this.server.close(async () => {
+        await Promise.allSettled(closingClients)
         resolve()
       })
     })
@@ -258,4 +266,4 @@ class Freelist {
   }
 }
 
-module.exports = PearRPC
+module.exports = PearIPC
