@@ -18,15 +18,14 @@ class PearIPC extends ReadyResource {
   #connect = null
   constructor (opts = {}) {
     super()
-    const pearDir = global.Pear?.config.pearDir || opts.pearDir
-    const lock = pearDir ? path.join(pearDir, 'corestores', 'platform', 'primary-key') : null
-    const api = new API(lock)
-    if (opts.api) Object.assign(api, opts.api)
     this._opts = opts
     this._socketPath = opts.socketPath
     this._handlers = opts.handlers || {}
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    this._api = opts.api || {}
+    const lock = path.join(opts.socketPath, '..', 'corestores', 'platform', 'primary-key')
+    const api = new API(lock)
+    if (opts.api) Object.assign(api, opts.api)
+    this._api = api
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
     this.#connect = opts.connect || null
     this._sc = null
@@ -84,7 +83,7 @@ class PearIPC extends ReadyResource {
   _register () {
     for (const { id, ...def } of this._methods) {
       const fn = this._handlers[def.name] || null
-      const api = this._api[def.name] || (
+      const api = (this._api[def.name] || (
         def.send
           ? (method) => fn
               ? (params = {}) => fn.call(this._handlers, params, this)
@@ -105,7 +104,8 @@ class PearIPC extends ReadyResource {
                       return method.request(params)
                     }
             )
-      )
+      )).bind(this._api)
+
       this[def.name] = api(this._rpc.register(+id, {
         request: any,
         response: any,
@@ -115,7 +115,7 @@ class PearIPC extends ReadyResource {
               return fn ? fn.call(this._handlers, params, this) : this.unhandled(def, params)
             },
         onstream: def.stream ? this._createOnStream(fn, (params) => this.unhandled(def, params)) : null
-      }), this).bind(this._api)
+      }), this)
     }
   }
 
