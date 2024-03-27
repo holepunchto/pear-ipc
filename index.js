@@ -22,8 +22,8 @@ class PearIPC extends ReadyResource {
     this._socketPath = opts.socketPath
     this._handlers = opts.handlers || {}
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    const lock = path.join(opts.socketPath, '..', 'corestores', 'platform', 'primary-key')
-    const api = new API(lock)
+    this.lock = path.join(opts.socketPath, '..', 'corestores', 'platform', 'primary-key')
+    const api = new API(this.lock)
     if (opts.api) Object.assign(api, opts.api)
     this._api = api
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
@@ -125,7 +125,7 @@ class PearIPC extends ReadyResource {
       try {
         stream.on('error', noop)
         for await (const params of stream) {
-          streamx.pipeline(streamx.Readable.from(fn.call(this._handlers, params, this)), stream)
+          for await (const data of fn.call(this._handlers, params, this)) stream.write(data)
         }
       } catch (err) {
         stream.destroy(err)
