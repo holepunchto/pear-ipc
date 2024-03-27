@@ -4,7 +4,8 @@
   "description": "IPC for Pear",
   "main": "index.js",
   "scripts": {
-    "test": "brittle test.js"
+    "test": "brittle test.js",
+    "lint": "standard"
   },
   "keywords": [],
   "author": "Holepunch",
@@ -23,7 +24,8 @@
     "which-runtime": "^1.2.0"
   },
   "devDependencies": {
-    "brittle": "^3.4.0"
+    "brittle": "^3.4.0",
+    "standard": "^17.1.0"
   },
   "repository": {
     "type": "git",
