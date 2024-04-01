@@ -129,7 +129,6 @@ class PearIPC extends ReadyResource {
           const isStream = streamx.isStream(src)
           if (isStream) {
             streamx.pipeline(src, stream)
-            stream.write(params)
           } else {
             for await (const data of src) stream.write(data)
             stream.end()
