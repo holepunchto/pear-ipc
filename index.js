@@ -3,6 +3,7 @@ const { isBare, isWindows } = require('which-runtime')
 const Pipe = isBare ? require('bare-pipe') : require('net')
 const path = require('path')
 const fs = require('fs')
+const streamx = require('streamx')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
 const ReadyResource = require('ready-resource')
@@ -94,6 +95,7 @@ class PearIPC extends ReadyResource {
                   ? (params = {}) => fn.call(this._handlers, params, this)
                   : (params = {}) => {
                       const stream = method.createRequestStream()
+                      stream.on('end', () => { stream.end() })
                       stream.write(params)
                       return stream
                     }
@@ -122,9 +124,16 @@ class PearIPC extends ReadyResource {
     if (fn === null) fn = unhandled
     return async (stream) => {
       try {
-        stream.on('error', noop)
         for await (const params of stream) {
-          for await (const data of fn.call(this._handlers, params, this)) stream.write(data)
+          const src = fn.call(this._handlers, params, this)
+          const isStream = streamx.isStream(src)
+          if (isStream) {
+            streamx.pipeline(src, stream)
+            stream.write(params)
+          } else {
+            for await (const data of src) stream.write(data)
+            stream.end()
+          }
         }
       } catch (err) {
         stream.destroy(err)
