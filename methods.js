@@ -28,7 +28,7 @@ const methods = [
   { id: 25, name: 'getPreference' },
   { id: 26, name: 'iteratePreferences', stream: true },
   { id: 27, name: 'preferences', stream: true },
-  { id: 28, name: 'moveStorage'}
+  { id: 28, name: 'shift', stream: true }
 ]
 
 module.exports = methods
