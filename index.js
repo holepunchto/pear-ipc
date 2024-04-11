@@ -1,4 +1,5 @@
 'use strict'
+
 const { isBare, isWindows } = require('which-runtime')
 const Pipe = isBare ? require('bare-pipe') : require('net')
 const path = require('path')
@@ -10,9 +11,15 @@ const ReadyResource = require('ready-resource')
 const FramedStream = require('framed-stream')
 const API = require('./api')
 const methods = require('./methods')
+const c = require('compact-encoding')
 
 const CONNECT_TIMEOUT = 20_000
 const noop = Function.prototype
+
+const log = (message) => {
+  const pid = isBare ? Bare.pid : global.process.pid
+  return fs.appendFileSync('/tmp/pear-debug.log', `pid ${pid}: ${message}\n`)
+}
 
 class PearIPC extends ReadyResource {
   #connect = null
@@ -102,6 +109,7 @@ class PearIPC extends ReadyResource {
               : (method) => fn
                   ? (params = {}) => fn.call(this._handlers, params, this)
                   : (params = {}) => {
+                      log(`rpc.method.request ${def.name} ${JSON.stringify(params)}`)
                       return method.request(params)
                     }
             )
@@ -113,6 +121,7 @@ class PearIPC extends ReadyResource {
         onrequest: def.stream
           ? null
           : (params) => {
+              log(`on request ${def.name} call params: ${JSON.stringify(params)}`)
               return fn ? fn.call(this._handlers, params, this) : this.unhandled(def, params)
             },
         onstream: def.stream ? this._createOnStream(fn, (params) => this.unhandled(def, params)) : null
@@ -145,8 +154,14 @@ class PearIPC extends ReadyResource {
     this.server.on('connection', async (stream) => {
       const client = new this.constructor({ ...this._opts, stream })
       client.id = this._clients.alloc(client)
-      stream.once('end', () => { client.close().finally(() => client.emit('close')) })
-      client.once('close', () => { this._clients.free(client.id) })
+      stream.once('end', async () => {
+        await log(`stream of client id ${client.id} close. Client closing ? ${client.closing}`)
+        client.close().finally(() => client.emit('close'))
+      })
+      client.once('close', async () => {
+        await log(`client id ${client.id} close. Client closing ? ${client.closing}`)
+        this._clients.free(client.id)
+      })
       await client.ready()
       this.emit('client', client)
     })
@@ -222,6 +237,7 @@ class PearIPC extends ReadyResource {
   }
 
   async _close () {
+    log('ipc _close...')
     clearTimeout(this.timeout)
     // breathing room for final data flushing:
     await new Promise((resolve) => setImmediate(resolve))
