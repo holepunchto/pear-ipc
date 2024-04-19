@@ -12,7 +12,6 @@ const PEAR_DIR = isMac
     : path.join(os.homedir(), '.config', 'pear')
 
 class API {
-
   wakeup (method) {
     return (link, storage, appdev) => method.request({ args: [link, storage, appdev] })
   }
