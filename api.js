@@ -1,11 +1,17 @@
 'use strict'
+const os = require('os')
 const fs = require('fs')
+const path = require('path')
 const fsext = require('fs-native-extensions')
+const { isWindows, isMac } = require('which-runtime')
+
+const PEAR_DIR = isMac
+  ? path.join(os.homedir(), 'Library', 'Application Support', 'pear')
+  : isWindows
+    ? path.join(os.homedir(), 'AppData', 'Roaming', 'pear')
+    : path.join(os.homedir(), '.config', 'pear')
 
 class API {
-  constructor (lock) {
-    this.lock = lock
-  }
 
   wakeup (method) {
     return (link, storage, appdev) => method.request({ args: [link, storage, appdev] })
@@ -14,8 +20,8 @@ class API {
   shutdown (method) {
     return async () => {
       method.send()
-      if (!this.lock) return
-      const fd = await new Promise((resolve, reject) => fs.open(this.lock, 'r+', (err, fd) => {
+      const lock = path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')
+      const fd = await new Promise((resolve, reject) => fs.open(lock, 'r+', (err, fd) => {
         if (err) {
           reject(err)
           return
