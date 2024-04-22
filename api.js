@@ -12,6 +12,10 @@ const PEAR_DIR = isMac
     : path.join(os.homedir(), '.config', 'pear')
 
 class API {
+  constructor (lock = path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')) {
+    this.lock = lock
+  }
+
   wakeup (method) {
     return (link, storage, appdev) => method.request({ args: [link, storage, appdev] })
   }
@@ -19,8 +23,7 @@ class API {
   shutdown (method) {
     return async () => {
       method.send()
-      const lock = path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')
-      const fd = await new Promise((resolve, reject) => fs.open(lock, 'r+', (err, fd) => {
+      const fd = await new Promise((resolve, reject) => fs.open(this.lock, 'r+', (err, fd) => {
         if (err) {
           reject(err)
           return

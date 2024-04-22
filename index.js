@@ -21,7 +21,7 @@ class PearIPC extends ReadyResource {
     this._socketPath = opts.socketPath
     this._handlers = opts.handlers || {}
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    const api = new API()
+    const api = new API(opts.lock)
     if (opts.api) Object.assign(api, opts.api)
     this._api = api
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
