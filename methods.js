@@ -29,7 +29,8 @@ const methods = [
   { id: 26, name: 'iteratePreferences', stream: true },
   { id: 27, name: 'preferences', stream: true },
   { id: 28, name: 'shift', stream: true },
-  { id: 29, name: 'build', stream: true }
+  { id: 29, name: 'build', stream: true },
+  { id: 30, name: 'gc', stream: true }
 ]
 
 module.exports = methods
