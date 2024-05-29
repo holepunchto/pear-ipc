@@ -33,6 +33,7 @@ const methods = [
   { id: 30, name: 'gc', stream: true },
   { id: 31, name: 'clearIdentity' },
   { id: 32, name: 'shareIdentity' },
+  { id: 33, name: 'requestIdentity' }
 ]
 
 module.exports = methods
