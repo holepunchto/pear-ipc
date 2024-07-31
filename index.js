@@ -1,12 +1,22 @@
 'use strict'
-const { isBare, isWindows } = require('which-runtime')
+const { isBare, isWindows, isMac } = require('which-runtime')
 const Pipe = isBare ? require('bare-pipe') : require('net')
+const path = require('path')
+const os = require('os')
 const fs = require('fs')
+const fsext = require('fs-native-extensions')
 const streamx = require('streamx')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
 const ReadyResource = require('ready-resource')
 const FramedStream = require('framed-stream')
+
+const PEAR_DIR = isMac
+  ? path.join(os.homedir(), 'Library', 'Application Support', 'pear')
+  : isWindows
+    ? path.join(os.homedir(), 'AppData', 'Roaming', 'pear')
+    : path.join(os.homedir(), '.config', 'pear')
+
 const API = require('./api')
 const methods = require('./methods')
 
@@ -21,7 +31,8 @@ class PearIPC extends ReadyResource {
     this._socketPath = opts.socketPath
     this._handlers = opts.handlers || {}
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    const api = new API(opts.lock)
+    this._lock = opts.lock || path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')
+    const api = new API(this)
     if (opts.api) Object.assign(api, opts.api)
     this._api = api
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
@@ -42,6 +53,24 @@ class PearIPC extends ReadyResource {
   get hasClients () { return !this._clients.emptied() }
 
   client (id) { return this._clients.from(id) || null }
+
+  async waitForLock () {
+    const fd = await new Promise((resolve, reject) => fs.open(this._lock, 'r+', (err, fd) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      resolve(fd)
+    }))
+    await fsext.waitForLock(fd)
+    await new Promise((resolve, reject) => fs.close(fd, (err) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      resolve()
+    }))
+  }
 
   async _open () {
     if (this.rawStream === null) {
