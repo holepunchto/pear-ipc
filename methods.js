@@ -12,7 +12,7 @@ const methods = [
   { id: 9, name: 'versions' },
   { id: 10, name: 'address' },
   { id: 11, name: 'detached' },
-  { id: 12, name: 'trust' },
+  { id: 12, name: 'permit' },
   { id: 13, name: 'identify' },
   { id: 14, name: 'wakeup' },
   { id: 15, name: 'warming', stream: true },
