@@ -284,7 +284,7 @@ class PearIPC extends ReadyResource {
     this.server?.ref()
   }
 
-  async _close () {
+  async _close () { // never throws, must never throw
     try {
       clearInterval(this._heartbeat)
       clearTimeout(this._timeout)
