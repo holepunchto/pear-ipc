@@ -139,8 +139,8 @@ test('ipc stream api wrapped', async (t) => {
   }
 })
 
-test.solo('ipc client close when heartbeat fails', async (t) => {
-  t.plan(1)
+test('ipc client close when heartbeat fails', async (t) => {
+  t.plan(2)
   const server = new IPC({
     socketPath,
     handlers: { start: (params) => params.result }
@@ -150,13 +150,26 @@ test.solo('ipc client close when heartbeat fails', async (t) => {
     socketPath,
     connect: true
   })
+  let pinged = false
+  const { _register } = IPC.prototype
+  IPC.prototype._register = function (...args) {
+    if (this.server === null && this.id > -1) {
+      const { _ping } = this._internalHandlers
+      this._internalHandlers._ping = (params, client) => {
+        pinged = true
+        IPC.prototype._register = _register
+        return _ping(params, client)
+      }
+    }
+    return _register.apply(this, args)
+  }
 
   client.once('close', () => {
     t.pass('client closed by server when heartbeat fails')
+    t.is(pinged, true)
   })
 
   await server.ready()
   await client.ready()
-
   client._beat = () => {} // simulate heartbeat failure
 })
