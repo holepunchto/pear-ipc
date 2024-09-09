@@ -273,14 +273,14 @@ class PearIPC extends ReadyResource {
   unref () {
     this._heartbeat?.unref()
     this._timeout?.unref()
-    if (this.rawStream?.unref) this.rawStream?.unref()
+    if (this.rawStream?.unref) this.rawStream.unref()
     this.server?.unref()
   }
 
   ref () {
     this._heartbeat?.ref()
     this._timeout?.ref()
-    if (this.rawStream?.ref) this.rawStream?.ref()
+    if (this.rawStream?.ref) this.rawStream.ref()
     this.server?.ref()
   }
 
@@ -295,9 +295,7 @@ class PearIPC extends ReadyResource {
         await new Promise((resolve) => {
           const closingClients = []
           for (const client of this._clients) {
-            const close = client.close()
-            close.catch(noop)
-            closingClients.push(close)
+            closingClients.push(client.close())
           }
           this.server.close(async () => {
             await Promise.allSettled(closingClients)
