@@ -139,16 +139,15 @@ test('ipc stream api wrapped', async (t) => {
   }
 })
 
-test('ipc client close when heartbeat fails', async (t) => {
+test.solo('ipc client close when heartbeat fails', async (t) => {
   t.plan(1)
-  // t.timeout(8000)
   const server = new IPC({
     socketPath,
     handlers: { start: (params) => params.result }
   })
   t.teardown(() => server.close())
   const client = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     connect: true
   })
 
