@@ -284,6 +284,7 @@ class PearIPC extends ReadyResource {
   }
 
   async _close () {
+    console.trace('close called', 'isServer', !!this.server)
     try {
       clearInterval(this._heartbeat)
       clearTimeout(this._timeout)
