@@ -137,27 +137,21 @@ class PearIPC extends ReadyResource {
     for (const { id, ...def } of this._methods) {
       const fn = this._handlers[def.name] || this._internalHandlers?.[def.name] || null
 
-      const api = this._api[def.name]?.bind(this._api) || (
-        def.send
-          ? (method) => fn
-              ? (params = {}) => fn.call(this._handlers, params, this)
-              : (params = {}) => {
-                  return method.send(params)
-                }
-          : (def.stream
-              ? fn
-                ? () => (params = {}) => fn.call(this._handlers, params, this)
-                : (method) => (params = {}) => {
-                    const stream = method.createRequestStream()
-                    stream.on('end', () => { stream.end() })
-                    stream.write(params)
-                    return stream
-                  }
-              : fn
-                ? () => (params = {}) => fn.call(this._handlers, params, this)
-                : (method) => (params = {}) => method.request(params)
-            )
-      )
+      const api = this._api[def.name]?.bind(this._api) || (fn
+        ? () => (params = {}) => fn.call(this._handlers, params, this)
+        : (
+            def.send
+              ? (method) => (params = {}) => method.send(params)
+              : (!def.stream
+                  ? (method) => (params = {}) => method.request(params)
+                  : (method) => (params = {}) => {
+                      const stream = method.createRequestStream()
+                      stream.on('end', () => { stream.end() })
+                      stream.write(params)
+                      return stream
+                    }
+                )
+          ))
 
       this[def.name] = api(this._rpc.register(+id, {
         request: any,
