@@ -1,17 +1,19 @@
 'use strict'
+const { isWindows } = require('which-runtime')
 const test = require('brittle')
 const streamx = require('streamx')
 const IPC = require('.')
 
+const socketPath = isWindows ? '\\\\.\\pipe\\pear-ipc-test-pipe' : 'test.sock'
 test('ipc request', async (t) => {
   t.plan(1)
   const server = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     handlers: { start: (params) => params.result }
   })
   t.teardown(() => server.close())
   const client = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     connect: true
   })
 
@@ -33,12 +35,12 @@ test('ipc request api wrapped', async (t) => {
   }
 
   const server = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     handlers: { start: (params) => params.result }
   })
   t.teardown(() => server.close())
   const client = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     api,
     connect: true
   })
@@ -52,7 +54,7 @@ test('ipc stream', async (t) => {
   t.plan(4)
 
   const server = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     handlers: {
       messages: (params) => {
         t.is(params.result, 'good')
@@ -70,7 +72,7 @@ test('ipc stream', async (t) => {
   })
   t.teardown(() => server.close())
   const client = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     connect: true
   })
   await server.ready()
@@ -92,7 +94,7 @@ test('ipc stream api wrapped', async (t) => {
   t.plan(4)
 
   const server = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     handlers: {
       messages: (params) => {
         t.is(params.result, 'very good')
@@ -110,7 +112,7 @@ test('ipc stream api wrapped', async (t) => {
   })
   t.teardown(() => server.close())
   const client = new IPC({
-    socketPath: 'test.sock',
+    socketPath,
     connect: true,
     api: {
       messages (method) {

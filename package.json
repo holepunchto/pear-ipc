@@ -7,6 +7,11 @@
     "test": "brittle test.js",
     "lint": "standard"
   },
+  "files": [
+    "api.js",
+    "index.js",
+    "methods.js"
+  ],
   "keywords": [],
   "author": "Holepunch",
   "license": "Apache-2.0",
