@@ -290,18 +290,20 @@ class PearIPC extends ReadyResource {
       // breathing room for final data flushing:
       await new Promise((resolve) => setImmediate(resolve))
       this.rawStream?.destroy()
-      if (this.server) await new Promise((resolve) => {
-        const closingClients = []
-        for (const client of this._clients) {
-          const close = client.close()
-          close.catch(noop)
-          closingClients.push(close)
-        }
-        this.server.close(async () => {
-          await Promise.allSettled(closingClients)
-          resolve()
+      if (this.server) {
+        await new Promise((resolve) => {
+          const closingClients = []
+          for (const client of this._clients) {
+            const close = client.close()
+            close.catch(noop)
+            closingClients.push(close)
+          }
+          this.server.close(async () => {
+            await Promise.allSettled(closingClients)
+            resolve()
+          })
         })
-      })
+      }
     } finally {
       this.emit('close')
     }
