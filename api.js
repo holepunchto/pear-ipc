@@ -1,9 +1,13 @@
 'use strict'
+class Internal {
+  _ping (method) { return () => method.request({ beat: 'ping' }) }
+}
 
-class API {
+class API extends Internal {
   #ipc = null
 
   constructor (ipc) {
+    super()
     this.#ipc = ipc
   }
 

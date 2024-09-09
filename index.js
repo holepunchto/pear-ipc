@@ -21,6 +21,7 @@ const API = require('./api')
 const methods = require('./methods')
 
 const CONNECT_TIMEOUT = 20_000
+const HEARTBEAT_INTERVAL = 1500
 const noop = Function.prototype
 
 class PearIPC extends ReadyResource {
@@ -40,6 +41,13 @@ class PearIPC extends ReadyResource {
     this._sc = null
     this._rpc = null
     this._clients = new Freelist()
+    this._lastActive = Date.now()
+    this._internalHandlers = {
+      _ping: (_, client) => {
+        client._lastActive = Date.now()
+        return { beat: 'pong' }
+      }
+    }
     this.id = -1
     this.server = null
     this.rawStream = opts.stream || null
@@ -105,16 +113,28 @@ class PearIPC extends ReadyResource {
     this.stream.on('close', onclose)
 
     this._register()
+
+    if (this.server === null && this.id === -1) {
+      await this._beat()
+      this._heartbeat = setInterval(() => {
+        this._beat()
+      }, HEARTBEAT_INTERVAL)
+    }
+  }
+
+  async _beat () {
+    const result = await this._ping()
+    if (result.beat !== 'pong') this.close()
   }
 
   _register () {
     for (const { id, ...def } of this._methods) {
-      const fn = this._handlers[def.name] || null
+      const fn = this._handlers[def.name] || this._internalHandlers[def.name] || null
       const api = (this._api[def.name] || (
         def.send
           ? (method) => fn
               ? (params = {}) => fn.call(this._handlers, params, this)
-              : (params) => {
+              : (params = {}) => {
                   return method.send(params)
                 }
           : (def.stream
@@ -151,8 +171,11 @@ class PearIPC extends ReadyResource {
     if (fn === null) fn = unhandled
     return async (stream) => {
       try {
+        let src = null
         for await (const params of stream) {
-          const src = fn.call(this._handlers, params, this)
+          const next = fn.call(this._handlers, params, this)
+          if (src === next) continue
+          src = next
           const isStream = streamx.isStream(src)
           if (isStream) {
             streamx.pipeline(src, stream)
@@ -172,11 +195,19 @@ class PearIPC extends ReadyResource {
     this.server.on('connection', async (stream) => {
       const client = new this.constructor({ ...this._opts, stream })
       client.id = this._clients.alloc(client)
-      stream.once('end', () => { client.close().finally(() => client.emit('close')) })
+      stream.once('end', () => { client.close() })
       client.once('close', () => { this._clients.free(client.id) })
       await client.ready()
       this.emit('client', client)
     })
+    this._heartbeat = setInterval(() => {
+      for (const client of this.clients) {
+        const since = Date.now() - client._lastActive
+        const max = HEARTBEAT_INTERVAL * 2
+        const inactive = since > max
+        if (inactive) client.close()
+      }
+    }, HEARTBEAT_INTERVAL)
     this._rpc = new RPC(noop)
     this._register()
   }
@@ -194,7 +225,7 @@ class PearIPC extends ReadyResource {
     let timedout = false
     let next = null
 
-    this.timeout = setTimeout(() => {
+    this._timeout = setTimeout(() => {
       timedout = true
       this.close()
     }, this._connectTimeout)
@@ -208,7 +239,7 @@ class PearIPC extends ReadyResource {
     const onconnect = () => {
       this.rawStream.removeListener('error', onerror)
       this.rawStream.removeListener('connect', onconnect)
-      clearTimeout(this.timeout)
+      clearTimeout(this._timeout)
       next(true)
     }
 
@@ -225,7 +256,7 @@ class PearIPC extends ReadyResource {
       await new Promise((resolve) => setTimeout(resolve, trycount < 2 ? 5 : trycount < 10 ? 10 : 100))
     }
 
-    clearTimeout(this.timeout)
+    clearTimeout(this._timeout)
 
     if (this.closing) {
       if (this.rawStream) this.rawStream.destroy()
@@ -239,32 +270,41 @@ class PearIPC extends ReadyResource {
   }
 
   unref () {
-    if (this.rawStream?.unref) this.rawStream.unref()
+    this._heartbeat?.unref()
+    this._timeout?.unref()
+    this.rawStream?.unref()
     this.server?.unref()
   }
 
   ref () {
-    if (this.rawStream?.ref) this.rawStream.ref()
+    this._heartbeat?.ref()
+    this._timeout?.ref()
+    this.rawStream?.ref()
     this.server?.ref()
   }
 
   async _close () {
-    clearTimeout(this.timeout)
-    // breathing room for final data flushing:
-    await new Promise((resolve) => setImmediate(resolve))
-    this.rawStream?.destroy()
-    return this.server && await new Promise((resolve) => {
-      const closingClients = []
-      for (const client of this._clients) {
-        const close = client.close()
-        close.catch(noop)
-        closingClients.push(close)
-      }
-      this.server.close(async () => {
-        await Promise.allSettled(closingClients)
-        resolve()
+    try {
+      clearInterval(this._heartbeat)
+      clearTimeout(this._timeout)
+      // breathing room for final data flushing:
+      await new Promise((resolve) => setImmediate(resolve))
+      this.rawStream?.destroy()
+      if (this.server) await new Promise((resolve) => {
+        const closingClients = []
+        for (const client of this._clients) {
+          const close = client.close()
+          close.catch(noop)
+          closingClients.push(close)
+        }
+        this.server.close(async () => {
+          await Promise.allSettled(closingClients)
+          resolve()
+        })
       })
-    })
+    } finally {
+      this.emit('close')
+    }
   }
 }
 
