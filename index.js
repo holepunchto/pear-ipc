@@ -115,10 +115,10 @@ class PearIPC extends ReadyResource {
     this._register()
 
     if (this.server === null && this.id === -1) {
-      await this._beat()
       this._heartbeat = setInterval(() => {
         this._beat()
       }, HEARTBEAT_INTERVAL)
+      await this._beat()
     }
   }
 
