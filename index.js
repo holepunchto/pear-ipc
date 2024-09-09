@@ -43,12 +43,7 @@ class PearIPC extends ReadyResource {
     this._rpc = null
     this._clients = new Freelist()
     this._lastActive = Date.now()
-    this._internalHandlers = {
-      _ping: (_, client) => {
-        client._lastActive = Date.now()
-        return { beat: 'pong' }
-      }
-    }
+    this._internalHandlers = null
     this.id = -1
     this.server = null
     this.rawStream = opts.stream || null
@@ -82,6 +77,15 @@ class PearIPC extends ReadyResource {
   }
 
   async _open () {
+    if (this.id > -1 && this._internalHandlers === null) {
+      this._internalHandlers = {
+        _ping: (_, client) => {
+          client._lastActive = Date.now()
+          return { beat: 'pong' }
+        }
+      }
+    }
+
     if (this.rawStream === null) {
       if (this.#connect) await this._connect()
       else this._serve()
@@ -126,13 +130,14 @@ class PearIPC extends ReadyResource {
   async _beat () {
     let result = null
     try { result = await this._ping() } catch { this.close() }
-    if (result.beat !== 'pong') this.close()
+    if (result?.beat !== 'pong') this.close()
   }
 
   _register () {
     for (const { id, ...def } of this._methods) {
-      const fn = this._handlers[def.name] || this._internalHandlers[def.name] || null
-      const api = (this._api[def.name] || (
+      const fn = this._handlers[def.name] || this._internalHandlers?.[def.name] || null
+
+      const api = this._api[def.name]?.bind(this._api) || (
         def.send
           ? (method) => fn
               ? (params = {}) => fn.call(this._handlers, params, this)
@@ -140,21 +145,19 @@ class PearIPC extends ReadyResource {
                   return method.send(params)
                 }
           : (def.stream
-              ? (method) => fn
-                  ? (params = {}) => fn.call(this._handlers, params, this)
-                  : (params = {}) => {
-                      const stream = method.createRequestStream()
-                      stream.on('end', () => { stream.end() })
-                      stream.write(params)
-                      return stream
-                    }
-              : (method) => fn
-                  ? (params = {}) => fn.call(this._handlers, params, this)
-                  : (params = {}) => {
-                      return method.request(params)
-                    }
+              ? fn
+                ? () => (params = {}) => fn.call(this._handlers, params, this)
+                : (method) => (params = {}) => {
+                    const stream = method.createRequestStream()
+                    stream.on('end', () => { stream.end() })
+                    stream.write(params)
+                    return stream
+                  }
+              : fn
+                ? () => (params = {}) => fn.call(this._handlers, params, this)
+                : (method) => (params = {}) => method.request(params)
             )
-      )).bind(this._api)
+      )
 
       this[def.name] = api(this._rpc.register(+id, {
         request: any,
@@ -294,7 +297,7 @@ class PearIPC extends ReadyResource {
       if (this.server) {
         await new Promise((resolve) => {
           const closingClients = []
-          for (const client of this._clients) {
+          for (const client of this.clients) {
             closingClients.push(client.close())
           }
           this.server.close(async () => {
