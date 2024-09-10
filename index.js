@@ -265,14 +265,14 @@ class PearIPC extends ReadyResource {
   }
 
   unref () {
-    this._heartbeat?.unref()
+    // this._heartbeat?.unref()
     this._timeout?.unref()
     if (this.rawStream?.unref) this.rawStream.unref()
     this.server?.unref()
   }
 
   ref () {
-    this._heartbeat?.ref()
+    // this._heartbeat?.ref()
     this._timeout?.ref()
     if (this.rawStream?.ref) this.rawStream.ref()
     this.server?.ref()
