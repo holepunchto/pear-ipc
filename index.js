@@ -122,7 +122,7 @@ class PearIPC extends ReadyResource {
     if (this.server === null && this.id === -1) {
       this._heartbeat = setInterval(() => {
         this._beat()
-      }, HEARTBEAT_INTERVAL)
+      }, HEARTBEAT_INTERVAL).unref()
       await this._beat()
     }
   }
@@ -202,7 +202,7 @@ class PearIPC extends ReadyResource {
         const inactive = since > MAX_HEARTBEAT
         if (inactive) client.close()
       }
-    }, HEARTBEAT_INTERVAL)
+    }, HEARTBEAT_INTERVAL).unref()
     this._rpc = new RPC(noop)
     this._register()
   }
@@ -223,7 +223,7 @@ class PearIPC extends ReadyResource {
     this._timeout = setTimeout(() => {
       timedout = true
       this.close()
-    }, this._connectTimeout)
+    }, this._connectTimeout).unref()
 
     const onerror = () => {
       this.rawStream.removeListener('error', onerror)
@@ -266,14 +266,14 @@ class PearIPC extends ReadyResource {
 
   unref () {
     // this._heartbeat?.unref()
-    this._timeout?.unref()
+    // this._timeout?.unref()
     if (this.rawStream?.unref) this.rawStream.unref()
     this.server?.unref()
   }
 
   ref () {
     // this._heartbeat?.ref()
-    this._timeout?.ref()
+    // this._timeout?.ref()
     if (this.rawStream?.ref) this.rawStream.ref()
     this.server?.ref()
   }
@@ -287,7 +287,7 @@ class PearIPC extends ReadyResource {
     if (this.server) {
       await new Promise((resolve) => {
         const closingClients = []
-        for (const client of this.clients) {
+        for (const client of this._clients) {
           closingClients.push(client.close())
         }
         this.server.close(async () => {
