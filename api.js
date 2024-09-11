@@ -1,9 +1,7 @@
 'use strict'
 class Internal {
-  _ping (method) { return () => {
-    // console.trace('API _ping')
-    return method.request({ beat: 'ping' })
-   } }
+  _pinging = true
+  _ping (method) { return () => this._pinging && method.request({ beat: 'ping' }) }
 }
 
 class API extends Internal {
@@ -21,7 +19,7 @@ class API extends Internal {
   shutdown (method) {
     return async () => {
       method.send()
-      await this.#ipc.waitForLock()
+      await this.#ipc.constructor.waitForLock(this.#ipc._lock)
     }
   }
 }
