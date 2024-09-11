@@ -35,22 +35,22 @@ Create a server/client IPC instance with automatic RPC method setting/handling c
 Default method declarations can be found in [methods.js](methods.js).
 
 #### Base Methods
-* `ipc.ready` - IPC client connect to server / IPC server begin listening
+* `ipc.ready()` - IPC client connect to server / IPC server begin listening
 * `ipc.client(id)` - get IPC server client instance by `ipc.id`
-* `ipc.ref` - reference as active handle
-* `ipc.unref` - unreference as active handle
-* `ipc.close` - close the client IPC instance / server IPC instance
+* `ipc.ref()` - reference as active handle
+* `ipc.unref()` - unreference as active handle
+* `ipc.close()` - close the client IPC instance / server IPC instance
 
 #### Base Properties
 
 * `ipc.id` - Instance ID
 * `ipc.clients` - IPC server instance array of IPC client instances
-* `ipc.hasClients` - IPC server has client instances
-* `ipc.userData` - Default: `null`. Set `ipc.userData` to an object to efficiently hold client metadata.
+* `ipc.hasClients` - Boolean. Whether IPC server has client instances
+* `ipc.userData` - Default: `null`. Set `ipc.userData` to an object to efficiently hold client metadata
 * `ipc.opening` - Promise that resolves on open
-* `ipc.opened` - IPC client has connected / IPC server has started
+* `ipc.opened` - Boolean. IPC client has connected / IPC server has started
 * `ipc.closing` - Promise that resolves on close
-* `ipc.closed` - IPC client has disconnected / IPC server has shutdown
+* `ipc.closed` - Boolean. IPC client has disconnected / IPC server has shutdown
 
 
 ## License
