@@ -23,7 +23,7 @@ const methods = require('./methods')
 const CONNECT_TIMEOUT = 20_000
 const HEARTBEAT_INTERVAL = 1500
 const HEARBEAT_MAX = HEARTBEAT_INTERVAL * 2
-const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'open', 'opening', 'opened', 'close', 'closing', 'closed'])
+const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'opening', 'opened', 'close', 'closing', 'closed'])
 const noop = Function.prototype
 
 class PearIPC extends ReadyResource {
