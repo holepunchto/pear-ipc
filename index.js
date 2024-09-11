@@ -80,7 +80,9 @@ class PearIPC extends ReadyResource {
     if (this.id > -1 && this._internalHandlers === null) {
       this._internalHandlers = {
         _ping: (_, client) => {
-          client._lastActive = Date.now()
+          const now = Date.now()
+          console.trace('_internalHandlers _ping', 'serverclient:', this.id > -1, '_lastActive:', client._lastActive, 'active:', now)
+          client._lastActive = now
           return { beat: 'pong' }
         }
       }
@@ -122,15 +124,23 @@ class PearIPC extends ReadyResource {
     if (this.server === null && this.id === -1) {
       this._heartbeat = setInterval(() => {
         this._beat()
-      }, HEARTBEAT_INTERVAL).unref()
+      }, HEARTBEAT_INTERVAL)
       await this._beat()
     }
   }
 
   async _beat () {
+    console.trace('_beat')
     let result = null
-    try { result = await this._ping() } catch { this.close() }
-    if (result?.beat !== 'pong') this.close()
+    try { result = await this._ping() } catch (err) { 
+      console.trace('_ping error, calling close', err, this._ping + '')
+      this.close() 
+    }
+
+    if (result?.beat !== 'pong') {
+      console.trace('no pong, calling close', result)
+      this.close()
+    }
   }
 
   _register () {
@@ -197,9 +207,11 @@ class PearIPC extends ReadyResource {
       this.emit('client', client)
     })
     this._heartbeat = setInterval(() => {
+      console.log('server beat')
       for (const client of this.clients) {
         const since = Date.now() - client._lastActive
         const inactive = since > MAX_HEARTBEAT
+        console.log('client', client.id, 'inactive:', inactive)
         if (inactive) client.close()
       }
     }, HEARTBEAT_INTERVAL).unref()
@@ -223,7 +235,7 @@ class PearIPC extends ReadyResource {
     this._timeout = setTimeout(() => {
       timedout = true
       this.close()
-    }, this._connectTimeout).unref()
+    }, this._connectTimeout)
 
     const onerror = () => {
       this.rawStream.removeListener('error', onerror)
@@ -265,20 +277,23 @@ class PearIPC extends ReadyResource {
   }
 
   unref () {
-    // this._heartbeat?.unref()
-    // this._timeout?.unref()
+    console.trace('unref')
+    this._heartbeat?.unref()
+    this._timeout?.unref()
     if (this.rawStream?.unref) this.rawStream.unref()
     this.server?.unref()
   }
 
   ref () {
-    // this._heartbeat?.ref()
-    // this._timeout?.ref()
+    console.trace('ref')
+    this._heartbeat?.ref()
+    this._timeout?.ref()
     if (this.rawStream?.ref) this.rawStream.ref()
     this.server?.ref()
   }
 
   async _close () { // never throws, must never throw
+    console.trace('_close')
     clearInterval(this._heartbeat)
     clearTimeout(this._timeout)
     // breathing room for final data flushing:
