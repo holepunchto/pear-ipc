@@ -1,17 +1,15 @@
 'use strict'
 class Internal {
-  _pinging = true
-  _ping (method) { return () => this._pinging && method.request({ beat: 'ping' }) }
+  constructor (ipc) { this._ipc = ipc }
+  _ping (method) {
+    return () => {
+      const ping = !this._ipc._shutting && !this._ipc.closed && !this._ipc.closing
+      return ping && method.request({ beat: 'ping' })
+    }
+  }
 }
 
 class API extends Internal {
-  #ipc = null
-
-  constructor (ipc) {
-    super()
-    this.#ipc = ipc
-  }
-
   wakeup (method) {
     return (link, storage, appdev) => method.request({ args: [link, storage, appdev] })
   }
@@ -19,8 +17,8 @@ class API extends Internal {
   shutdown (method) {
     return async () => {
       method.send()
-      this._pinging = false
-      await this.#ipc.constructor.waitForLock(this.#ipc._lock)
+      this._ipc._shutting = true
+      await this._ipc.constructor.waitForLock(this._ipc._lock)
     }
   }
 }
