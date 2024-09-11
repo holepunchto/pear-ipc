@@ -63,7 +63,7 @@ class PearIPC extends ReadyResource {
     this._clients = new Freelist()
     this._lastActive = Date.now()
     this._internalHandlers = null
-    this._shutting = false
+
     this._server = null
     this._rawStream = opts.stream || null
     this._stream = null
@@ -123,7 +123,7 @@ class PearIPC extends ReadyResource {
     this._stream = new FramedStream(this._rawStream)
 
     this._rpc = new RPC((data) => {
-      if (this._shutting || this.closing || this.closed) return
+      if (this.closed || this._api.shutting) return
       this._stream.write(data)
     })
 
@@ -165,7 +165,8 @@ class PearIPC extends ReadyResource {
                   ? (method) => (params = {}) => method.request(params)
                   : (method) => (params = {}) => {
                       const stream = method.createRequestStream()
-                      if (this._shutting || this.closing || this.closed) return stream
+                      stream.on('end', () => { stream.end() })
+                      if (this.closed || this._api.shutting) return stream
                       stream.write(params)
                       return stream
                     }
