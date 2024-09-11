@@ -81,7 +81,7 @@ class PearIPC extends ReadyResource {
       this._internalHandlers = {
         _ping: (_, client) => {
           const now = Date.now()
-          console.trace('_internalHandlers _ping', 'serverclient:', this.id > -1, '_lastActive:', client._lastActive, 'active:', now)
+          // console.trace('_internalHandlers _ping', 'serverclient:', this.id > -1, '_lastActive:', client._lastActive, 'active:', now)
           client._lastActive = now
           return { beat: 'pong' }
         }
@@ -130,15 +130,15 @@ class PearIPC extends ReadyResource {
   }
 
   async _beat () {
-    console.trace('_beat')
+    // console.trace('_beat')
     let result = null
     try { result = await this._ping() } catch (err) { 
-      console.trace('_ping error, calling close', err, this._ping + '')
+      // console.trace('_ping error, calling close', err, this._ping + '')
       this.close() 
     }
 
     if (result?.beat !== 'pong') {
-      console.trace('no pong, calling close', result)
+      // console.trace('no pong, calling close', result)
       this.close()
     }
   }
@@ -277,7 +277,7 @@ class PearIPC extends ReadyResource {
   }
 
   unref () {
-    console.trace('unref')
+    // console.trace('unref')
     this._heartbeat?.unref()
     this._timeout?.unref()
     if (this.rawStream?.unref) this.rawStream.unref()
@@ -285,7 +285,7 @@ class PearIPC extends ReadyResource {
   }
 
   ref () {
-    console.trace('ref')
+    // console.trace('ref')
     this._heartbeat?.ref()
     this._timeout?.ref()
     if (this.rawStream?.ref) this.rawStream.ref()
@@ -293,7 +293,7 @@ class PearIPC extends ReadyResource {
   }
 
   async _close () { // never throws, must never throw
-    console.trace('_close')
+    // console.trace('_close')
     clearInterval(this._heartbeat)
     clearTimeout(this._timeout)
     // breathing room for final data flushing:
