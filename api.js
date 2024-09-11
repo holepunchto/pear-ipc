@@ -19,6 +19,7 @@ class API extends Internal {
   shutdown (method) {
     return async () => {
       method.send()
+      this._pinging = false
       await this.#ipc.constructor.waitForLock(this.#ipc._lock)
     }
   }
