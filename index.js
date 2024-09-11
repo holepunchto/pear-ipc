@@ -146,8 +146,7 @@ class PearIPC extends ReadyResource {
   }
 
   async _beat () {
-    let result = null
-    try { result = await this._ping() } catch { /* ignore */ }
+    try { await this._ping() } catch { /* ignore */ }
   }
 
   _register () {
