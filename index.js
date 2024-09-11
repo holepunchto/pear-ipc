@@ -22,10 +22,29 @@ const methods = require('./methods')
 
 const CONNECT_TIMEOUT = 20_000
 const HEARTBEAT_INTERVAL = 1500
-const MAX_HEARTBEAT = HEARTBEAT_INTERVAL * 2
+const HEARBEAT_MAX = HEARTBEAT_INTERVAL * 2
+const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'open', 'opening', 'opened', 'close', 'closing', 'closed'])
 const noop = Function.prototype
 
 class PearIPC extends ReadyResource {
+  static async waitForLock (lock = path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')) {
+    const fd = await new Promise((resolve, reject) => fs.open(lock, 'r+', (err, fd) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      resolve(fd)
+    }))
+    await fsext.waitForLock(fd)
+    await new Promise((resolve, reject) => fs.close(fd, (err) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      resolve()
+    }))
+  }
+
   #connect = null
   constructor (opts = {}) {
     super()
@@ -44,11 +63,13 @@ class PearIPC extends ReadyResource {
     this._clients = new Freelist()
     this._lastActive = Date.now()
     this._internalHandlers = null
+
+    this._server = null
+    this._rawStream = opts.stream || null
+    this._stream = null
+    this._unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
+
     this.id = -1
-    this.server = null
-    this.rawStream = opts.stream || null
-    this.stream = null
-    this.unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
     this.userData = opts.userData || null
   }
 
@@ -58,22 +79,18 @@ class PearIPC extends ReadyResource {
 
   client (id) { return this._clients.from(id) || null }
 
-  async waitForLock () {
-    const fd = await new Promise((resolve, reject) => fs.open(this._lock, 'r+', (err, fd) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve(fd)
-    }))
-    await fsext.waitForLock(fd)
-    await new Promise((resolve, reject) => fs.close(fd, (err) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve()
-    }))
+  ref () {
+    this._heartbeat?.ref()
+    this._timeout?.ref()
+    if (this._rawStream?.ref) this._rawStream.ref()
+    this._server?.ref()
+  }
+
+  unref () {
+    this._heartbeat?.unref()
+    this._timeout?.unref()
+    if (this._rawStream?.unref) this._rawStream.unref()
+    this._server?.unref()
   }
 
   async _open () {
@@ -81,47 +98,46 @@ class PearIPC extends ReadyResource {
       this._internalHandlers = {
         _ping: (_, client) => {
           const now = Date.now()
-          // console.trace('_internalHandlers _ping', 'serverclient:', this.id > -1, '_lastActive:', client._lastActive, 'active:', now)
           client._lastActive = now
           return { beat: 'pong' }
         }
       }
     }
 
-    if (this.rawStream === null) {
+    if (this._rawStream === null) {
       if (this.#connect) await this._connect()
       else this._serve()
     }
 
     if (this.closing) return
 
-    if (this.server) {
+    if (this._server) {
       try {
         if (!isWindows) await fs.promises.unlink(this._socketPath)
       } catch {}
       if (this.closing) return
-      await this.server.listen(this._socketPath)
+      await this._server.listen(this._socketPath)
       return
     }
 
-    this.stream = new FramedStream(this.rawStream)
+    this._stream = new FramedStream(this._rawStream)
 
     this._rpc = new RPC((data) => {
-      this.stream.write(data)
+      this._stream.write(data)
     })
 
-    this.stream.on('data', (data) => {
+    this._stream.on('data', (data) => {
       this._rpc.recv(data)
     })
 
     const onclose = this.close.bind(this)
 
-    this.stream.on('error', onclose)
-    this.stream.on('close', onclose)
+    this._stream.on('error', onclose)
+    this._stream.on('close', onclose)
 
     this._register()
 
-    if (this.server === null && this.id === -1) {
+    if (this._server === null && this.id === -1) {
       this._heartbeat = setInterval(() => {
         this._beat()
       }, HEARTBEAT_INTERVAL)
@@ -130,23 +146,18 @@ class PearIPC extends ReadyResource {
   }
 
   async _beat () {
-    // console.trace('_beat')
     let result = null
-    try { result = await this._ping() } catch (err) { 
-      console.trace('_ping error, calling close', err, this._ping + '')
-      this.close() 
-    }
+    try { result = await this._ping() } catch { this.close() }
 
     if (result?.beat !== 'pong') {
-      // console.trace('no pong, calling close', result)
       this.close()
     }
   }
 
   _register () {
     for (const { id, ...def } of this._methods) {
+      if (ILLEGAL_METHODS.has(def.name)) throw new Error('Illegal Method: ' + def.name)
       const fn = this._handlers[def.name] || this._internalHandlers?.[def.name] || null
-
       const api = this._api[def.name]?.bind(this._api) || (fn
         ? () => (params = {}) => fn.call(this._handlers, params, this)
         : (
@@ -169,9 +180,9 @@ class PearIPC extends ReadyResource {
         onrequest: def.stream
           ? null
           : (params) => {
-              return fn ? fn.call(this._handlers, params, this) : this.unhandled(def, params)
+              return fn ? fn.call(this._handlers, params, this) : this._unhandled(def, params)
             },
-        onstream: def.stream ? this._createOnStream(fn, (params) => this.unhandled(def, params)) : null
+        onstream: def.stream ? this._createOnStream(fn, (params) => this._unhandled(def, params)) : null
       }), this)
     }
   }
@@ -197,8 +208,8 @@ class PearIPC extends ReadyResource {
   }
 
   _serve () {
-    this.server = Pipe.createServer()
-    this.server.on('connection', async (stream) => {
+    this._server = Pipe.createServer()
+    this._server.on('connection', async (stream) => {
       const client = new this.constructor({ ...this._opts, stream })
       client.id = this._clients.alloc(client)
       stream.once('end', () => { client.close() })
@@ -207,14 +218,12 @@ class PearIPC extends ReadyResource {
       this.emit('client', client)
     })
     this._heartbeat = setInterval(() => {
-      console.log('server beat')
       for (const client of this.clients) {
         const since = Date.now() - client._lastActive
-        const inactive = since > MAX_HEARTBEAT
-        console.log('client', client.id, 'inactive:', inactive)
+        const inactive = since > HEARBEAT_MAX
         if (inactive) client.close()
       }
-    }, HEARTBEAT_INTERVAL).unref()
+    }, HEARTBEAT_INTERVAL)
     this._rpc = new RPC(noop)
     this._register()
   }
@@ -238,23 +247,23 @@ class PearIPC extends ReadyResource {
     }, this._connectTimeout)
 
     const onerror = () => {
-      this.rawStream.removeListener('error', onerror)
-      this.rawStream.removeListener('connect', onconnect)
+      this._rawStream.removeListener('error', onerror)
+      this._rawStream.removeListener('connect', onconnect)
       next(false)
     }
 
     const onconnect = () => {
-      this.rawStream.removeListener('error', onerror)
-      this.rawStream.removeListener('connect', onconnect)
+      this._rawStream.removeListener('error', onerror)
+      this._rawStream.removeListener('connect', onconnect)
       clearTimeout(this._timeout)
       next(true)
     }
 
     while (!this.closing) {
       const promise = new Promise((resolve) => { next = resolve })
-      this.rawStream = this._pipe(this._socketPath)
-      this.rawStream.on('connect', onconnect)
-      this.rawStream.on('error', onerror)
+      this._rawStream = this._pipe(this._socketPath)
+      this._rawStream.on('connect', onconnect)
+      this._rawStream.on('error', onerror)
 
       if (await promise) break
       if (timedout) throw new Error('Could not connect in time')
@@ -266,46 +275,29 @@ class PearIPC extends ReadyResource {
     clearTimeout(this._timeout)
 
     if (this.closing) {
-      if (this.rawStream) this.rawStream.destroy()
+      if (this._rawStream) this._rawStream.destroy()
       return
     }
 
     const onclose = this.close.bind(this)
 
-    this.rawStream.on('error', onclose)
-    this.rawStream.on('close', onclose)
-  }
-
-  unref () {
-    // console.trace('unref')
-    this._heartbeat?.unref()
-    this._timeout?.unref()
-    if (this.rawStream?.unref) this.rawStream.unref()
-    this.server?.unref()
-  }
-
-  ref () {
-    // console.trace('ref')
-    this._heartbeat?.ref()
-    this._timeout?.ref()
-    if (this.rawStream?.ref) this.rawStream.ref()
-    this.server?.ref()
+    this._rawStream.on('error', onclose)
+    this._rawStream.on('close', onclose)
   }
 
   async _close () { // never throws, must never throw
-    // console.trace('_close')
     clearInterval(this._heartbeat)
     clearTimeout(this._timeout)
     // breathing room for final data flushing:
     await new Promise((resolve) => setImmediate(resolve))
-    this.rawStream?.destroy()
-    if (this.server) {
+    this._rawStream?.destroy()
+    if (this._server) {
       await new Promise((resolve) => {
         const closingClients = []
         for (const client of this._clients) {
           closingClients.push(client.close())
         }
-        this.server.close(async () => {
+        this._server.close(async () => {
           await Promise.allSettled(closingClients)
           resolve()
         })

@@ -153,7 +153,7 @@ test('ipc client close when heartbeat fails', async (t) => {
   let pinged = false
   const { _register } = IPC.prototype
   IPC.prototype._register = function (...args) {
-    if (this.server === null && this.id > -1) {
+    if (this._server === null && this.id > -1) {
       const { _ping } = this._internalHandlers
       this._internalHandlers._ping = (params, client) => {
         pinged = true
