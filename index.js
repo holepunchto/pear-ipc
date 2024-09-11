@@ -133,7 +133,7 @@ class PearIPC extends ReadyResource {
     // console.trace('_beat')
     let result = null
     try { result = await this._ping() } catch (err) { 
-      // console.trace('_ping error, calling close', err, this._ping + '')
+      console.trace('_ping error, calling close', err, this._ping + '')
       this.close() 
     }
 
