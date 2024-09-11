@@ -1,6 +1,9 @@
 'use strict'
 class Internal {
-  _ping (method) { return () => method.request({ beat: 'ping' }) }
+  _ping (method) { return () => {
+    console.trace('API _ping')
+    return method.request({ beat: 'ping' })
+   } }
 }
 
 class API extends Internal {
