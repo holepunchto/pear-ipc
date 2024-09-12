@@ -123,7 +123,7 @@ class PearIPC extends ReadyResource {
     this._stream = new FramedStream(this._rawStream)
 
     this._rpc = new RPC((data) => {
-      if (this.closed || this._api.shutting) return
+      if (this.closed || this._api._shutting) return
       this._stream.write(data)
     })
 
@@ -166,7 +166,7 @@ class PearIPC extends ReadyResource {
                   : (method) => (params = {}) => {
                       const stream = method.createRequestStream()
                       stream.on('end', () => { stream.end() })
-                      if (this.closed || this._api.shutting) return stream
+                      if (this.closed || this._api._shutting) return stream
                       stream.write(params)
                       return stream
                     }
