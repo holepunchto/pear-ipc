@@ -123,7 +123,6 @@ class PearIPC extends ReadyResource {
     this._stream = new FramedStream(this._rawStream)
 
     this._rpc = new RPC((data) => {
-      if (this.closed || this._api._shutting || this.closing !== null) return
       this._stream.write(data)
     })
 
@@ -147,9 +146,7 @@ class PearIPC extends ReadyResource {
   }
 
   async _beat () {
-    try {
-      if (await this._ping() === false) clearInterval(this._heartbeat)
-    } catch { /* ignore */ }
+    try { await this._ping() } catch { /* ignore */ }
   }
 
   _register () {
@@ -166,7 +163,6 @@ class PearIPC extends ReadyResource {
                   : (method) => (params = {}) => {
                       const stream = method.createRequestStream()
                       stream.on('end', () => { stream.end() })
-                      if (this.closed || this._api._shutting || this.closing !== null) return stream
                       stream.write(params)
                       return stream
                     }
