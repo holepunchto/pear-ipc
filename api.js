@@ -4,7 +4,7 @@ class Internal {
   _shutting = false
   _ping (method) {
     return () => {
-      const ping = this._shutting === false && this._ipc.closed === false
+      const ping = this._shutting === false && this._ipc.closed === false && this._ipc.closing === null
       return ping && method.request({ beat: 'ping' })
     }
   }
