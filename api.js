@@ -2,7 +2,12 @@
 class Internal {
   constructor (ipc) { this._ipc = ipc }
   _shutting = false
-  _ping (method) { return () => this._shutting === false && method.request({ beat: 'ping' }) }
+  _ping (method) {
+    return () => {
+      const ping = this._shutting === false && this._ipc.closed === false
+      return ping && method.request({ beat: 'ping' })
+    }
+  }
 }
 
 class API extends Internal {
