@@ -36,7 +36,8 @@ const methods = [
   { id: 33, name: 'requestIdentity' },
   { id: 34, name: 'trustIdentity' },
   { id: 35, name: 'encryptionKey', stream: true },
-  { id: 36, name: 'trusted' }
+  { id: 36, name: 'trusted' },
+  { id: 37, name: 'touch', stream: true }
 
 ]
 
