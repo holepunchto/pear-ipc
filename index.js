@@ -11,12 +11,11 @@ const any = require('tiny-buffer-rpc/any')
 const ReadyResource = require('ready-resource')
 const FramedStream = require('framed-stream')
 
-const PEAR_DIR = isMac
+const PEAR_DIR = global.Pear?.config.pearDir || (isMac
   ? path.join(os.homedir(), 'Library', 'Application Support', 'pear')
   : isWindows
     ? path.join(os.homedir(), 'AppData', 'Roaming', 'pear')
-    : path.join(os.homedir(), '.config', 'pear')
-
+    : path.join(os.homedir(), '.config', 'pear'))
 const API = require('./api')
 const methods = require('./methods')
 
