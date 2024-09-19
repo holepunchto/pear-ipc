@@ -1,5 +1,5 @@
 'use strict'
-const fs = require('bare-fs')
+const fs = require('fs')
 const fsext = require('fs-native-extensions')
 
 class Internal {
