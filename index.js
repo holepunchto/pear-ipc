@@ -4,7 +4,6 @@ const Pipe = isBare ? require('bare-pipe') : require('net')
 const path = require('path')
 const os = require('os')
 const fs = require('fs')
-const fsext = require('fs-native-extensions')
 const streamx = require('streamx')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
@@ -26,24 +25,6 @@ const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'cli
 const noop = Function.prototype
 
 class PearIPC extends ReadyResource {
-  static async waitForLock (lock = path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')) {
-    const fd = await new Promise((resolve, reject) => fs.open(lock, 'r+', (err, fd) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve(fd)
-    }))
-    await fsext.waitForLock(fd)
-    await new Promise((resolve, reject) => fs.close(fd, (err) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve()
-    }))
-  }
-
   #connect = null
   constructor (opts = {}) {
     super()
@@ -285,6 +266,7 @@ class PearIPC extends ReadyResource {
     // breathing room for final data flushing:
     await new Promise((resolve) => setImmediate(resolve))
     this._rawStream?.destroy()
+    this._rawStream = null
     if (this._server) {
       await new Promise((resolve) => {
         const closingClients = []
