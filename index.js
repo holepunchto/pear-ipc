@@ -103,7 +103,11 @@ class PearIPC extends ReadyResource {
     this._stream = new FramedStream(this._rawStream)
 
     this._rpc = new RPC((data) => {
-      this._stream.write(data)
+      try {
+        this._stream.write(data)
+      } catch {
+        // ignore broken pipe error in shutdown after pipe close (Windows)
+      }
     })
 
     this._stream.on('data', (data) => {
