@@ -264,8 +264,12 @@ class PearIPC extends ReadyResource {
       this._stream.removeListener('error', this._onclose)
       this._stream.removeListener('close', this._onclose)
       await new Promise((resolve) => {
-        this._rawStream.once('close', resolve)
-        this._stream.end()
+        if (this._rawStream.destroyed) {
+          resolve()
+        } else {
+          this._rawStream.once('close', resolve)
+          this._stream.end()
+        }
       })
       this._rawStream = null
       this._stream = null
