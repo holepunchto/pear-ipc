@@ -5,6 +5,7 @@ const streamx = require('streamx')
 const IPC = require('.')
 
 const socketPath = isWindows ? '\\\\.\\pipe\\pear-ipc-test-pipe' : 'test.sock'
+
 test('ipc request', async (t) => {
   t.plan(1)
   const server = new IPC({
@@ -64,6 +65,7 @@ test('ipc stream', async (t) => {
           stream.push('streamly')
           setImmediate(() => {
             stream.push(params.result)
+            stream.end()
           })
         })
         return stream
