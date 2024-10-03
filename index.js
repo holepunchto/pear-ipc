@@ -287,6 +287,7 @@ class PearIPC extends ReadyResource {
         })
       })
     }
+    this._rpc.destroy()
   }
 }
 

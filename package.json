@@ -24,7 +24,7 @@
     "fs-native-extensions": "^1.2.7",
     "ready-resource": "^1.0.3",
     "streamx": "^2.16.1",
-    "tiny-buffer-rpc": "^2.0.1",
+    "tiny-buffer-rpc": "^2.2.0",
     "which-runtime": "^1.2.0"
   },
   "imports": {
