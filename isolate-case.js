@@ -20,6 +20,7 @@ const server = Pipe.createServer((pipe) => {
 
   pipe.on('end', () => {
     console.log('Server stream end event fired')
+    pipe.end()
   })
 
   pipe.on('close', () => {
@@ -46,6 +47,7 @@ server.listen(socketPath, () => {
 
   client.on('end', () => {
     console.log('Client stream end event fired')
+    client.end()
   })
 
   client.on('close', () => {
