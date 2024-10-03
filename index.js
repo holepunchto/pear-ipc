@@ -184,12 +184,13 @@ class PearIPC extends ReadyResource {
 
   _serve () {
     this._server = Pipe.createServer()
-    this._server.on('connection', async (stream) => {
-      const client = new this.constructor({ ...this._opts, stream })
+    this._server.on('connection', async (rawStream) => {
+      const client = new this.constructor({ ...this._opts, stream: rawStream })
       client.id = this._clients.alloc(client)
-      stream.once('end', () => { client.close() })
+      rawStream.once('end', () => { rawStream.end() })
+      rawStream.once('close', () => { client.close() })
       client.once('close', () => { this._clients.free(client.id) })
-      await client.ready()
+      client.ready()
       this.emit('client', client)
     })
     this._heartbeat = setInterval(() => {
@@ -254,7 +255,7 @@ class PearIPC extends ReadyResource {
     }
 
     const onclose = this.close.bind(this)
-    this._rawStream.on('end', onclose)
+    this._rawStream.on('end', () => { this._rawStream.end() })
     this._rawStream.on('error', onclose)
     this._rawStream.on('close', onclose)
   }
@@ -264,10 +265,12 @@ class PearIPC extends ReadyResource {
     clearTimeout(this._timeout)
 
     if (this._rawStream) {
+      console.log('end stream')
       await new Promise((resolve) => {
         this._rawStream.on('close', resolve)
         this._rawStream.end()
       })
+      console.log('stream closed')
       this._rawStream = null
     }
     if (this._server) {
