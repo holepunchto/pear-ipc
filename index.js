@@ -267,7 +267,7 @@ class PearIPC extends ReadyResource {
         if (this._stream.destroyed) {
           resolve()
         } else {
-          this._rawStream.once('close', resolve)
+          this._stream.once('close', resolve)
           this._stream.end()
         }
       })
