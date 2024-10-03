@@ -111,7 +111,7 @@ class PearIPC extends ReadyResource {
     })
 
     const onclose = this.close.bind(this)
-
+    this._stream.on('end', () => { this._stream.end() })
     this._stream.on('error', onclose)
     this._stream.on('close', onclose)
 
@@ -253,12 +253,12 @@ class PearIPC extends ReadyResource {
 
     clearTimeout(this._timeout)
     if (this.closing) {
-      if (this._rawStream) this._rawStream.destroy()
+      if (this._rawStream) this._rawStream.end()
       return
     }
 
     const onclose = this.close.bind(this)
-    this._rawStream.on('end', () => { this._rawStream.end() })
+
     this._rawStream.on('error', onclose)
     this._rawStream.on('close', onclose)
   }

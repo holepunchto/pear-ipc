@@ -55,4 +55,3 @@ server.listen(socketPath, () => {
     console.log('Client stream close event fired, closing')
   })
 })
-
