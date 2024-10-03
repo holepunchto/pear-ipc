@@ -265,8 +265,8 @@ class PearIPC extends ReadyResource {
 
     if (this._rawStream) {
       await new Promise((resolve) => {
-        this._rawStream.end()
         this._rawStream.on('close', resolve)
+        this._rawStream.end()
       })
       this._rawStream = null
     }
