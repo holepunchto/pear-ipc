@@ -4,7 +4,7 @@
   "description": "IPC for Pear",
   "main": "index.js",
   "scripts": {
-    "test": "brittle test.js",
+    "test": "npx bare test.js",
     "lint": "standard"
   },
   "files": [

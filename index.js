@@ -268,6 +268,9 @@ class PearIPC extends ReadyResource {
       console.log('end stream')
       await new Promise((resolve) => {
         this._rawStream.on('close', resolve)
+        this._rawStream.on('end', () => {
+          console.log('end fired')
+        })
         this._rawStream.end()
       })
       console.log('stream closed')
