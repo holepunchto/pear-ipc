@@ -187,7 +187,10 @@ class PearIPC extends ReadyResource {
     this._server.on('connection', async (rawStream) => {
       const client = new this.constructor({ ...this._opts, stream: rawStream })
       client.id = this._clients.alloc(client)
-      rawStream.once('end', () => { rawStream.end() })
+      rawStream.once('end', () => {
+        console.log('server rawStream ended')
+        rawStream.end()
+      })
       rawStream.once('close', () => { client.close() })
       client.once('close', () => { this._clients.free(client.id) })
       client.ready()
