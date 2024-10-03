@@ -256,21 +256,23 @@ class PearIPC extends ReadyResource {
     this._setup()
   }
 
+  _waitForClose () {
+    return new Promise((resolve) => {
+      if (this._stream.destroyed) {
+        resolve()
+      } else {
+        this._stream.once('close', resolve)
+        this._stream.end()
+      }
+    })
+  }
+
   async _close () { // never throws, must never throw
     clearInterval(this._heartbeat)
     clearTimeout(this._timeout)
 
     if (this._stream) {
-      this._stream.removeListener('error', this._onclose)
-      this._stream.removeListener('close', this._onclose)
-      await new Promise((resolve) => {
-        if (this._stream.destroyed) {
-          resolve()
-        } else {
-          this._stream.once('close', resolve)
-          this._stream.end()
-        }
-      })
+      await this._waitForClose()
       this._rawStream = null
       this._stream = null
     }
