@@ -89,28 +89,33 @@ class PearIPC extends ReadyResource {
       } catch {}
       if (this.closing) return
       await this._server.listen(this._socketPath)
-      return
     }
   }
 
-  _setup () {
+  _setup (id = -1) {
+    this.id = id
     this._stream = new FramedStream(this._rawStream)
 
-    this._rpc = new RPC((data) => {
-      this._stream.write(data)
-    })
-
-    this._stream.on('data', (data) => {
-      this._rpc.recv(data)
-    })
-
+    this._rpc = new RPC((data) => { this._stream.write(data) })
+    this._stream.on('data', (data) => { this._rpc.recv(data) })
     this._stream.on('end', () => { this._stream.end() })
     this._stream.on('error', this._onclose)
     this._stream.on('close', this._onclose)
 
+    const isServerSide = id > -1
+    if (isServerSide) {
+      this._internalHandlers = {
+        _ping: (_, client) => {
+          const now = Date.now()
+          client._lastActive = now
+          return { beat: 'pong' }
+        }
+      }
+    }
+
     this._register()
 
-    if (this._server === null && this.id === -1) {
+    if (this.id === -1) {
       this._heartbeat = setInterval(() => {
         this._beat()
       }, HEARTBEAT_INTERVAL)
@@ -177,27 +182,20 @@ class PearIPC extends ReadyResource {
 
   _serve () {
     this._server = Pipe.createServer()
-    this._server.on('connection', async (rawStream) => {
+    this._server.on('connection', (rawStream) => {
       const client = new this.constructor({ ...this._opts, stream: rawStream })
-      client.id = this._clients.alloc(client)
-      rawStream.once('end', () => { rawStream.end()})
-      rawStream.once('close', () => { client.close() })
+      const id = this._clients.alloc(client)
+      client._setup(id)
       client.once('close', () => { this._clients.free(client.id) })
-      client._internalHandlers = {
-        _ping: (_, client) => {
-          const now = Date.now()
-          client._lastActive = now
-          return { beat: 'pong' }
-        }
-      }
-      client._setup()
       this.emit('client', client)
     })
     this._heartbeat = setInterval(() => {
       for (const client of this.clients) {
         const since = Date.now() - client._lastActive
         const inactive = since > HEARBEAT_MAX
-        if (inactive) client.close()
+        if (inactive) {
+          client.close()
+        }
       }
     }, HEARTBEAT_INTERVAL)
     this._rpc = new RPC(noop)
@@ -255,8 +253,6 @@ class PearIPC extends ReadyResource {
       return
     }
 
-    this._rawStream.on('error', this._onclose)
-    this._rawStream.on('close', this._onclose)
     this._setup()
   }
 
@@ -264,21 +260,23 @@ class PearIPC extends ReadyResource {
     clearInterval(this._heartbeat)
     clearTimeout(this._timeout)
 
-    if (this._rawStream) {
+    if (this._stream) {
+      this._stream.removeListener('error', this._onclose)
+      this._stream.removeListener('close', this._onclose)
       await new Promise((resolve) => {
-        this._rawStream.on('close', resolve)
-        this._rawStream.end()
+        this._rawStream.once('close', resolve)
+        this._stream.end()
       })
       this._rawStream = null
+      this._stream = null
     }
     if (this._server) {
       await new Promise((resolve) => {
         const closingClients = []
-        for (const client of this._clients) {
-          closingClients.push(client.close())
-        }
+        for (const client of this._clients) closingClients.push(client.close())
+        const clientsClosing = Promise.allSettled(closingClients)
         this._server.close(async () => {
-          await Promise.allSettled(closingClients)
+          await clientsClosing
           resolve()
         })
       })
