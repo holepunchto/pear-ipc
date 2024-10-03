@@ -41,7 +41,11 @@ jobs:
       run: npm install
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Run tests
-      run: npm test
+    - name: Install Bare
+      run: npm i -g bare
+    - name: Test [ Node ]
+      run: node test.js
+    - name: Test [ Bare ]
+      run: bare test.js
     - name: Lint
       run: npm run lint
