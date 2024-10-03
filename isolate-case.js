@@ -17,7 +17,7 @@ function makePipe () {
 
 const server = Pipe.createServer((pipe) => {
   console.log('Client connected')
-
+  pipe.resume()
   pipe.on('end', () => {
     console.log('Server stream end event fired')
     pipe.end()
@@ -33,6 +33,7 @@ const server = Pipe.createServer((pipe) => {
   setTimeout(() => {
     console.log('Server closing connection')
     pipe.end()
+    pipe.resume()
   }, 500)
 })
 
