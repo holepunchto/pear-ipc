@@ -163,12 +163,10 @@ test('ipc client close when heartbeat fails', async (t) => {
     }
     return _register.apply(this, args)
   }
-
   client.once('close', () => {
     t.pass('client closed by server when heartbeat fails')
     t.is(pinged, true)
   })
-
   await server.ready()
   await client.ready()
   client._beat = () => {} // simulate heartbeat failure

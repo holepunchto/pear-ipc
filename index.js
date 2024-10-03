@@ -248,14 +248,13 @@ class PearIPC extends ReadyResource {
     }
 
     clearTimeout(this._timeout)
-
     if (this.closing) {
       if (this._rawStream) this._rawStream.destroy()
       return
     }
 
     const onclose = this.close.bind(this)
-
+    this._rawStream.on('end', onclose)
     this._rawStream.on('error', onclose)
     this._rawStream.on('close', onclose)
   }
@@ -263,10 +262,14 @@ class PearIPC extends ReadyResource {
   async _close () { // never throws, must never throw
     clearInterval(this._heartbeat)
     clearTimeout(this._timeout)
-    // breathing room for final data flushing:
-    await new Promise((resolve) => setImmediate(resolve))
-    this._rawStream?.destroy()
-    this._rawStream = null
+
+    if (this._rawStream) {
+      await new Promise((resolve) => {
+        this._rawStream.end()
+        this._rawStream.on('close', resolve)
+      })
+      this._rawStream = null
+    }
     if (this._server) {
       await new Promise((resolve) => {
         const closingClients = []
