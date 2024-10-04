@@ -163,6 +163,7 @@ class PearIPC extends ReadyResource {
   _createOnStream (fn, unhandled) {
     if (fn === null) fn = unhandled
     return async (stream) => {
+      stream.on('end', () => stream.end())
       try {
         for await (const params of stream) {
           const src = fn.call(this._handlers, params, this)
