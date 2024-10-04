@@ -249,12 +249,11 @@ class PearIPC extends ReadyResource {
 
     clearTimeout(this._timeout)
 
+    this._setup()
+
     if (this.closing) {
       if (this._rawStream) this._rawStream.destroy()
-      return
     }
-
-    this._setup()
   }
 
   _waitForClose () {
