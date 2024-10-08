@@ -53,6 +53,7 @@ class PearIPC extends ReadyResource {
     this.userData = opts.userData || null
 
     this._onclose = this.close.bind(this)
+    this._onpipeline = opts.onpipeline || null
   }
 
   get clients () { return this._clients.alloced.filter(Boolean) }
@@ -170,7 +171,9 @@ class PearIPC extends ReadyResource {
           const isStream = streamx.isStream(src)
           if (isStream) {
             streamx.pipeline(src, stream)
+            if (typeof this._onpipeline === 'function') this._onpipeline(src, stream)
           } else {
+            if (typeof this._onpipeline === 'function') this._onpipeline(src, stream)
             for await (const data of src) stream.write(data)
             stream.end()
           }
