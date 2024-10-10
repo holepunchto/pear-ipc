@@ -141,6 +141,54 @@ test('ipc stream api wrapped', async (t) => {
   }
 })
 
+test('ipc stream w/ opts.onpipeline', async (t) => {
+  t.plan(6)
+  let serverStream = null
+  const server = new IPC({
+    socketPath,
+    onpipeline (src, dst) {
+      t.is(src, serverStream)
+      t.is(src._readableState.pipeTo, dst)
+    },
+    handlers: {
+      messages: (params) => {
+        t.is(params.result, 'good')
+        const stream = new streamx.PassThrough()
+        serverStream = stream
+        stream.name = 'boobyjoew'
+        stream.push('ex')
+        setImmediate(() => {
+          stream.push('streamly')
+          setImmediate(() => {
+            stream.push(params.result)
+            stream.end()
+          })
+        })
+
+        return stream
+      }
+    }
+  })
+  t.teardown(() => server.close())
+  const client = new IPC({
+    socketPath,
+    connect: true
+  })
+  await server.ready()
+  await client.ready()
+  const stream = client.messages({ result: 'good' })
+  let count = 0
+  for await (const data of stream) {
+    count += 1
+    if (count === 1) t.is(data, 'ex')
+    if (count === 2) t.is(data, 'streamly')
+    if (count === 3) {
+      t.is(data, 'good')
+      break
+    }
+  }
+})
+
 test('ipc client close when heartbeat fails', async (t) => {
   t.plan(2)
   const server = new IPC({
