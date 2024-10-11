@@ -20,7 +20,6 @@ const methods = require('./methods')
 
 const CONNECT_TIMEOUT = 20_000
 const HEARTBEAT_INTERVAL = 1500
-const HEARBEAT_MAX = HEARTBEAT_INTERVAL * 4
 const HEARBEAT_CLOCK = 4
 const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'opening', 'opened', 'close', 'closing', 'closed'])
 const noop = Function.prototype
@@ -108,7 +107,7 @@ class PearIPC extends ReadyResource {
     if (isServerSide) {
       this._internalHandlers = {
         _ping: (_, client) => {
-          client._clock  = HEARBEAT_CLOCK
+          client._clock = HEARBEAT_CLOCK
           return { beat: 'pong' }
         }
       }
