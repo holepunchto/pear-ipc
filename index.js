@@ -20,7 +20,7 @@ const methods = require('./methods')
 
 const CONNECT_TIMEOUT = 20_000
 const HEARTBEAT_INTERVAL = 1500
-const HEARBEAT_MAX = HEARTBEAT_INTERVAL * 4
+const HEARBEAT_CLOCK = 5
 const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'opening', 'opened', 'close', 'closing', 'closed'])
 const noop = Function.prototype
 
@@ -41,7 +41,7 @@ class PearIPC extends ReadyResource {
     this._sc = null
     this._rpc = null
     this._clients = new Freelist()
-    this._lastActive = Date.now()
+    this._clock = HEARBEAT_CLOCK
     this._internalHandlers = null
 
     this._server = null
@@ -107,8 +107,7 @@ class PearIPC extends ReadyResource {
     if (isServerSide) {
       this._internalHandlers = {
         _ping: (_, client) => {
-          const now = Date.now()
-          client._lastActive = now
+          client._clock = HEARBEAT_CLOCK
           return { beat: 'pong' }
         }
       }
@@ -195,11 +194,8 @@ class PearIPC extends ReadyResource {
     })
     this._heartbeat = setInterval(() => {
       for (const client of this.clients) {
-        const since = Date.now() - client._lastActive
-        const inactive = since > HEARBEAT_MAX
-        if (inactive) {
-          client.close()
-        }
+        client._clock--
+        if (client._clock <= 0) client.close()
       }
     }, HEARTBEAT_INTERVAL)
     this._rpc = new RPC(noop)
