@@ -24,21 +24,17 @@ const methods = [
   { id: 21, name: 'createReport' },
   { id: 22, name: 'reports', stream: true },
   { id: 23, name: 'shutdown', send: true },
-  { id: 24, name: 'setPreference' },
-  { id: 25, name: 'getPreference' },
-  { id: 26, name: 'iteratePreferences', stream: true },
-  { id: 27, name: 'preferences', stream: true },
-  { id: 28, name: 'shift', stream: true },
-  { id: 29, name: 'build', stream: true },
-  { id: 30, name: 'gc', stream: true },
-  { id: 31, name: 'clearIdentity' },
-  { id: 32, name: 'shareIdentity' },
-  { id: 33, name: 'requestIdentity' },
-  { id: 34, name: 'trustIdentity' },
-  { id: 35, name: 'encryptionKey', stream: true },
-  { id: 36, name: 'trusted' },
-  { id: 37, name: 'touch', stream: true },
-  { id: 38, name: '_ping' }
+  { id: 24, name: 'shift', stream: true },
+  { id: 25, name: 'build', stream: true },
+  { id: 26, name: 'gc', stream: true },
+  { id: 27, name: 'clearIdentity' },
+  { id: 28, name: 'shareIdentity' },
+  { id: 29, name: 'requestIdentity' },
+  { id: 30, name: 'trustIdentity' },
+  { id: 31, name: 'encryptionKey', stream: true },
+  { id: 32, name: 'trusted' },
+  { id: 33, name: 'touch', stream: true },
+  { id: 34, name: '_ping' }
 ]
 
 module.exports = methods
