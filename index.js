@@ -1,6 +1,6 @@
 'use strict'
 const { isBare, isWindows, isMac } = require('which-runtime')
-const Pipe = isBare ? require('bare-pipe') : require('net')
+const Pipe = require('net') // import mapped to bare-pipe, less resolves
 const path = require('path')
 const os = require('os')
 const fs = require('fs')

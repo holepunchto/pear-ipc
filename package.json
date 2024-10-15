@@ -39,6 +39,10 @@
     "path": {
       "bare": "bare-path",
       "default": "path"
+    },
+    "net": {
+      "bare": "bare-pipe",
+      "default": "net"
     }
   },
   "devDependencies": {
