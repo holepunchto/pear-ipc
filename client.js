@@ -3,7 +3,6 @@ const { isBare, isWindows, isMac } = require('which-runtime')
 const Pipe = require('net') // import mapped to bare-pipe, less resolves
 const path = require('path')
 const os = require('os')
-const fs = require('fs')
 const streamx = require('streamx')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
@@ -22,7 +21,6 @@ const CONNECT_TIMEOUT = 20_000
 const HEARTBEAT_INTERVAL = 1500
 const HEARBEAT_CLOCK = 5
 const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'opening', 'opened', 'close', 'closing', 'closed'])
-const noop = Function.prototype
 
 class PearIPCClient extends ReadyResource {
   #connect = null
@@ -38,13 +36,10 @@ class PearIPCClient extends ReadyResource {
     this._api = api
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
     this.#connect = opts.connect || null
-    this._sc = null
     this._rpc = null
-    this._clients = new Freelist()
     this._clock = HEARBEAT_CLOCK
     this._internalHandlers = null
 
-    this._server = null
     this._rawStream = opts.stream || null
     this._stream = null
     this._unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
@@ -56,40 +51,22 @@ class PearIPCClient extends ReadyResource {
     this._onpipeline = opts.onpipeline || null
   }
 
-  get clients () { return this._clients.alloced.filter(Boolean) }
-
-  get hasClients () { return !this._clients.emptied() }
-
-  client (id) { return this._clients.from(id) || null }
-
   ref () {
     this._heartbeat?.ref()
     this._timeout?.ref()
     if (this._rawStream?.ref) this._rawStream.ref()
-    this._server?.ref()
   }
 
   unref () {
     this._heartbeat?.unref()
     this._timeout?.unref()
     if (this._rawStream?.unref) this._rawStream.unref()
-    this._server?.unref()
   }
 
   async _open () {
     if (this._rawStream === null) {
       if (this.#connect) await this._connect()
       else this._serve()
-    }
-
-    if (this.closing) return
-
-    if (this._server) {
-      try {
-        if (!isWindows) await fs.promises.unlink(this._socketPath)
-      } catch {}
-      if (this.closing) return
-      await this._server.listen(this._socketPath)
     }
   }
 
@@ -102,16 +79,6 @@ class PearIPCClient extends ReadyResource {
     this._stream.on('end', () => { this._stream.end() })
     this._stream.on('error', this._onclose)
     this._stream.on('close', this._onclose)
-
-    const isServerSide = id > -1
-    if (isServerSide) {
-      this._internalHandlers = {
-        _ping: (_, client) => {
-          client._clock = HEARBEAT_CLOCK
-          return { beat: 'pong' }
-        }
-      }
-    }
 
     this._register()
 
@@ -181,25 +148,6 @@ class PearIPCClient extends ReadyResource {
         stream.destroy(err)
       }
     }
-  }
-
-  _serve () {
-    this._server = Pipe.createServer()
-    this._server.on('connection', (rawStream) => {
-      const client = new this.constructor({ ...this._opts, stream: rawStream })
-      const id = this._clients.alloc(client)
-      client._setup(id)
-      client.once('close', () => { this._clients.free(client.id) })
-      this.emit('client', client)
-    })
-    this._heartbeat = setInterval(() => {
-      for (const client of this.clients) {
-        client._clock--
-        if (client._clock <= 0) client.close()
-      }
-    }, HEARTBEAT_INTERVAL)
-    this._rpc = new RPC(noop)
-    this._register()
   }
 
   _pipe () {
@@ -275,53 +223,7 @@ class PearIPCClient extends ReadyResource {
       this._rawStream = null
       this._stream = null
     }
-    if (this._server) {
-      await new Promise((resolve) => {
-        const closingClients = []
-        for (const client of this._clients) closingClients.push(client.close())
-        const clientsClosing = Promise.allSettled(closingClients)
-        this._server.close(async () => {
-          await clientsClosing
-          resolve()
-        })
-      })
-    }
     this._rpc.destroy()
-  }
-}
-
-class Freelist {
-  alloced = []
-  freed = []
-
-  nextId () {
-    return this.freed.length === 0 ? this.alloced.length : this.freed[this.freed.length - 1]
-  }
-
-  alloc (item) {
-    const id = this.freed.length === 0 ? this.alloced.push(null) - 1 : this.freed.pop()
-    this.alloced[id] = item
-    return id
-  }
-
-  free (id) {
-    this.freed.push(id)
-    this.alloced[id] = null
-  }
-
-  from (id) {
-    return id < this.alloced.length ? this.alloced[id] : null
-  }
-
-  emptied () {
-    return this.freed.length === this.alloced.length
-  }
-
-  * [Symbol.iterator] () {
-    for (const item of this.alloced) {
-      if (item === null) continue
-      yield item
-    }
   }
 }
 

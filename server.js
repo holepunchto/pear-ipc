@@ -103,24 +103,14 @@ class PearIPCServer extends ReadyResource {
     this._stream.on('error', this._onclose)
     this._stream.on('close', this._onclose)
 
-    const isServerSide = id > -1
-    if (isServerSide) {
-      this._internalHandlers = {
-        _ping: (_, client) => {
-          client._clock = HEARBEAT_CLOCK
-          return { beat: 'pong' }
-        }
+    this._internalHandlers = {
+      _ping: (_, client) => {
+        client._clock = HEARBEAT_CLOCK
+        return { beat: 'pong' }
       }
     }
 
     this._register()
-
-    if (this.id === -1) {
-      this._heartbeat = setInterval(() => {
-        this._beat()
-      }, HEARTBEAT_INTERVAL)
-      this._beat()
-    }
   }
 
   async _beat () {
