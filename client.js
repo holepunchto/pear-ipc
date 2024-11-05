@@ -1,25 +1,15 @@
 'use strict'
-const { isBare, isWindows, isMac } = require('which-runtime')
+const { isBare } = require('which-runtime')
 const Pipe = require('net') // import mapped to bare-pipe, less resolves
 const path = require('path')
-const os = require('os')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
 const ReadyResource = require('ready-resource')
 const FramedStream = require('framed-stream')
 
-const PEAR_DIR = global.Pear?.config.pearDir || (isMac
-  ? path.join(os.homedir(), 'Library', 'Application Support', 'pear')
-  : isWindows
-    ? path.join(os.homedir(), 'AppData', 'Roaming', 'pear')
-    : path.join(os.homedir(), '.config', 'pear'))
 const API = require('./api')
 const methods = require('./methods')
-
-const CONNECT_TIMEOUT = 20_000
-const HEARTBEAT_INTERVAL = 1500
-const HEARBEAT_CLOCK = 5
-const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'opening', 'opened', 'close', 'closing', 'closed'])
+const constants = require('./constants')
 
 class PearIPCClient extends ReadyResource {
   #connect = null
@@ -28,11 +18,11 @@ class PearIPCClient extends ReadyResource {
     this._opts = opts
     this._socketPath = opts.socketPath
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    this._lock = opts.lock || path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')
+    this._lock = opts.lock || path.join(constants.PEAR_DIR, 'corestores', 'platform', 'primary-key')
     const api = new API(this)
     if (opts.api) Object.assign(api, opts.api)
     this._api = api
-    this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
+    this._connectTimeout = opts.connectTimeout || constants.CONNECT_TIMEOUT
     this.#connect = opts.connect || null
     this._rpc = null
     this._internalHandlers = null
@@ -77,7 +67,7 @@ class PearIPCClient extends ReadyResource {
 
     this._heartbeat = setInterval(() => {
       this._beat()
-    }, HEARTBEAT_INTERVAL)
+    }, constants.HEARTBEAT_INTERVAL)
     this._beat()
   }
 
@@ -116,7 +106,7 @@ class PearIPCClient extends ReadyResource {
 
   _register () {
     for (const { id, ...def } of this._methods) {
-      if (ILLEGAL_METHODS.has(def.name)) throw new Error('Illegal Method: ' + def.name)
+      if (constants.ILLEGAL_METHODS.has(def.name)) throw new Error('Illegal Method: ' + def.name)
       const api = this._api[def.name]?.bind(this._api) || this._createMethod(def)
 
       this[def.name] = api(this._rpc.register(+id, {
