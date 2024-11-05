@@ -91,25 +91,40 @@ class PearIPCClient extends ReadyResource {
     try { await this._ping() } catch { /* ignore */ }
   }
 
+  _createSendMethod (method) {
+    return (params = {}) => method.send(params)
+  }
+
+  _createRequestMethod (method) {
+    return (params = {}) => method.request(params)
+  }
+
+  _createStreamMethod (method) {
+    return (params = {}) => {
+      const stream = method.createRequestStream()
+      stream.on('end', () => { stream.end() })
+      stream.write(params)
+      return stream
+    }
+  }
+
+  _createMethod (definition) {
+    if (definition.send) {
+      return this._createSendMethod
+    }
+
+    if (!definition.stream) {
+      return this._createRequestMethod
+    }
+
+    return this._createStreamMethod
+  }
+
   _register () {
     for (const { id, ...def } of this._methods) {
       if (ILLEGAL_METHODS.has(def.name)) throw new Error('Illegal Method: ' + def.name)
       const fn = this._handlers[def.name] || this._internalHandlers?.[def.name] || null
-      const api = this._api[def.name]?.bind(this._api) || (fn
-        ? () => (params = {}) => fn.call(this._handlers, params, this)
-        : (
-            def.send
-              ? (method) => (params = {}) => method.send(params)
-              : (!def.stream
-                  ? (method) => (params = {}) => method.request(params)
-                  : (method) => (params = {}) => {
-                      const stream = method.createRequestStream()
-                      stream.on('end', () => { stream.end() })
-                      stream.write(params)
-                      return stream
-                    }
-                )
-          ))
+      const api = this._api[def.name]?.bind(this._api) || this._createMethod(def)
 
       this[def.name] = api(this._rpc.register(+id, {
         request: any,
