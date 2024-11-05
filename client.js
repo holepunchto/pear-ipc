@@ -3,7 +3,6 @@ const { isBare, isWindows, isMac } = require('which-runtime')
 const Pipe = require('net') // import mapped to bare-pipe, less resolves
 const path = require('path')
 const os = require('os')
-const streamx = require('streamx')
 const RPC = require('tiny-buffer-rpc')
 const any = require('tiny-buffer-rpc/any')
 const ReadyResource = require('ready-resource')
@@ -123,42 +122,12 @@ class PearIPCClient extends ReadyResource {
   _register () {
     for (const { id, ...def } of this._methods) {
       if (ILLEGAL_METHODS.has(def.name)) throw new Error('Illegal Method: ' + def.name)
-      const fn = this._handlers[def.name] || this._internalHandlers?.[def.name] || null
       const api = this._api[def.name]?.bind(this._api) || this._createMethod(def)
 
       this[def.name] = api(this._rpc.register(+id, {
         request: any,
-        response: any,
-        onrequest: def.stream
-          ? null
-          : (params) => {
-              return fn ? fn.call(this._handlers, params, this) : this._unhandled(def, params)
-            },
-        onstream: def.stream ? this._createOnStream(fn, (params) => this._unhandled(def, params)) : null
+        response: any
       }), this)
-    }
-  }
-
-  _createOnStream (fn, unhandled) {
-    if (fn === null) fn = unhandled
-    return async (stream) => {
-      stream.on('end', () => stream.end())
-      try {
-        for await (const params of stream) {
-          const src = fn.call(this._handlers, params, this)
-          const isStream = streamx.isStream(src)
-          if (isStream) {
-            streamx.pipeline(src, stream)
-            if (typeof this._onpipeline === 'function') this._onpipeline(src, stream)
-          } else {
-            if (typeof this._onpipeline === 'function') this._onpipeline(src, stream)
-            for await (const data of src) stream.write(data)
-            stream.end()
-          }
-        }
-      } catch (err) {
-        stream.destroy(err)
-      }
     }
   }
 
