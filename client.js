@@ -27,7 +27,6 @@ class PearIPCClient extends ReadyResource {
     super()
     this._opts = opts
     this._socketPath = opts.socketPath
-    this._handlers = opts.handlers || {}
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
     this._lock = opts.lock || path.join(PEAR_DIR, 'corestores', 'platform', 'primary-key')
     const api = new API(this)
@@ -36,18 +35,14 @@ class PearIPCClient extends ReadyResource {
     this._connectTimeout = opts.connectTimeout || CONNECT_TIMEOUT
     this.#connect = opts.connect || null
     this._rpc = null
-    this._clock = HEARBEAT_CLOCK
     this._internalHandlers = null
 
     this._rawStream = opts.stream || null
     this._stream = null
-    this._unhandled = opts.unhandled || ((def) => { throw new Error('Method not found:' + def.name) })
 
-    this.id = -1
     this.userData = opts.userData || null
 
     this._onclose = this.close.bind(this)
-    this._onpipeline = opts.onpipeline || null
   }
 
   ref () {
