@@ -70,8 +70,7 @@ class PearIPCClient extends ReadyResource {
     }
   }
 
-  _setup (id = -1) {
-    this.id = id
+  _setup () {
     this._stream = new FramedStream(this._rawStream)
 
     this._rpc = new RPC((data) => { this._stream.write(data) })
@@ -82,12 +81,10 @@ class PearIPCClient extends ReadyResource {
 
     this._register()
 
-    if (this.id === -1) {
-      this._heartbeat = setInterval(() => {
-        this._beat()
-      }, HEARTBEAT_INTERVAL)
+    this._heartbeat = setInterval(() => {
       this._beat()
-    }
+    }, HEARTBEAT_INTERVAL)
+    this._beat()
   }
 
   async _beat () {
