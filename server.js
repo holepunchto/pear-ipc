@@ -29,7 +29,6 @@ class PearIPCServer extends ReadyResource {
     this._api = api
     this._connectTimeout = opts.connectTimeout || constants.CONNECT_TIMEOUT
     this.#connect = opts.connect || null
-    this._sc = null
     this._rpc = null
     this._clients = new Freelist()
     this._clock = constants.HEARBEAT_CLOCK
@@ -55,22 +54,19 @@ class PearIPCServer extends ReadyResource {
 
   ref () {
     this._heartbeat?.ref()
-    this._timeout?.ref()
     if (this._rawStream?.ref) this._rawStream.ref()
     this._server?.ref()
   }
 
   unref () {
     this._heartbeat?.unref()
-    this._timeout?.unref()
     if (this._rawStream?.unref) this._rawStream.unref()
     this._server?.unref()
   }
 
   async _open () {
     if (this._rawStream === null) {
-      if (this.#connect) await this._connect()
-      else this._serve()
+      this._serve()
     }
 
     if (this.closing) return
@@ -217,7 +213,6 @@ class PearIPCServer extends ReadyResource {
 
   async _close () { // never throws, must never throw
     clearInterval(this._heartbeat)
-    clearTimeout(this._timeout)
 
     if (this._stream) {
       await this._waitForClose()
