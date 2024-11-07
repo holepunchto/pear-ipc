@@ -2,18 +2,18 @@
 const { isWindows } = require('which-runtime')
 const test = require('brittle')
 const streamx = require('streamx')
-const { PearIPCServer, PearIPCClient } = require('.')
+const { Server, Client } = require('.')
 
 const socketPath = isWindows ? '\\\\.\\pipe\\pear-ipc-test-pipe' : 'test.sock'
 
 test('ipc request', async (t) => {
   t.plan(1)
-  const server = new PearIPCServer({
+  const server = new Server({
     socketPath,
     handlers: { start: (params) => params.result }
   })
   t.teardown(() => server.close())
-  const client = new PearIPCClient({
+  const client = new Client({
     socketPath,
     connect: true
   })
@@ -35,12 +35,12 @@ test('ipc request api wrapped', async (t) => {
     }
   }
 
-  const server = new PearIPCServer({
+  const server = new Server({
     socketPath,
     handlers: { start: (params) => params.result }
   })
   t.teardown(() => server.close())
-  const client = new PearIPCClient({
+  const client = new Client({
     socketPath,
     api,
     connect: true
@@ -54,7 +54,7 @@ test('ipc request api wrapped', async (t) => {
 test('ipc stream', async (t) => {
   t.plan(4)
 
-  const server = new PearIPCServer({
+  const server = new Server({
     socketPath,
     handlers: {
       messages: (params) => {
@@ -73,7 +73,7 @@ test('ipc stream', async (t) => {
     }
   })
   t.teardown(() => server.close())
-  const client = new PearIPCClient({
+  const client = new Client({
     socketPath,
     connect: true
   })
@@ -95,7 +95,7 @@ test('ipc stream', async (t) => {
 test('ipc stream api wrapped', async (t) => {
   t.plan(4)
 
-  const server = new PearIPCServer({
+  const server = new Server({
     socketPath,
     handlers: {
       messages: (params) => {
@@ -113,7 +113,7 @@ test('ipc stream api wrapped', async (t) => {
     }
   })
   t.teardown(() => server.close())
-  const client = new PearIPCClient({
+  const client = new Client({
     socketPath,
     connect: true,
     api: {
@@ -144,7 +144,7 @@ test('ipc stream api wrapped', async (t) => {
 test('ipc stream w/ opts.onpipeline', async (t) => {
   t.plan(6)
   let serverStream = null
-  const server = new PearIPCServer({
+  const server = new Server({
     socketPath,
     onpipeline (src, dst) {
       t.is(src, serverStream)
@@ -170,7 +170,7 @@ test('ipc stream w/ opts.onpipeline', async (t) => {
     }
   })
   t.teardown(() => server.close())
-  const client = new PearIPCClient({
+  const client = new Client({
     socketPath,
     connect: true
   })
@@ -191,32 +191,32 @@ test('ipc stream w/ opts.onpipeline', async (t) => {
 
 test('ipc client close when heartbeat fails', async (t) => {
   t.plan(2)
-  const server = new PearIPCServer({
+  const server = new Server({
     socketPath,
     handlers: { start: (params) => params.result }
   })
   t.teardown(() => server.close())
-  const client = new PearIPCClient({
+  const client = new Client({
     socketPath,
     connect: true
   })
   let pinged = false
 
-  const serverRegister = PearIPCServer.prototype._register
-  const clientRegister = PearIPCClient.prototype._register
+  const serverRegister = Server.prototype._register
+  const clientRegister = Client.prototype._register
 
-  PearIPCServer.prototype._register = function (...args) {
+  Server.prototype._register = function (...args) {
     if (this._server === null && this.id > -1) {
       const { _ping } = this._internalHandlers
       this._internalHandlers._ping = (params, client) => {
         pinged = true
-        PearIPCServer.prototype._register = serverRegister
+        Server.prototype._register = serverRegister
         return _ping(params, client)
       }
       return serverRegister.apply(this, args)
     }
   }
-  PearIPCClient.prototype._register = function (...args) {
+  Client.prototype._register = function (...args) {
     return clientRegister.apply(this, args)
   }
   client.once('close', () => {

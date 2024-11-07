@@ -2,4 +2,4 @@
 const PearIPCServer = require('./server')
 const PearIPCClient = require('./client')
 
-module.exports = { PearIPCServer, PearIPCClient }
+module.exports = { Server: PearIPCServer, Client: PearIPCClient }
