@@ -10,7 +10,10 @@
   "files": [
     "api.js",
     "index.js",
-    "methods.js"
+    "methods.js",
+    "server.js",
+    "client.js",
+    "constants.js"
   ],
   "keywords": [],
   "author": "Holepunch",
