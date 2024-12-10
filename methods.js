@@ -31,7 +31,6 @@ const methods = [
   { id: 28, name: 'shareIdentity' },
   { id: 29, name: 'requestIdentity' },
   { id: 30, name: 'trustIdentity' },
-  { id: 31, name: 'encryptionKey', stream: true },
   { id: 32, name: 'trusted' },
   { id: 33, name: 'touch', stream: true },
   { id: 34, name: '_ping' }
