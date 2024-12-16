@@ -36,16 +36,13 @@ const methods = [
   { id: 33, name: 'touch', stream: true },
   { id: 34, name: '_ping' },
   { id: 35, name: 'minver' },
-  { id: 36, name: 'get' },
-  { id: 37, name: 'has' },
-  { id: 38, name: 'clientReady' },
-  { id: 39, name: 'clientExists' },
-  { id: 40, name: 'closed' },
-  { id: 41, name: 'reported' },
-  { id: 42, name: 'linkerHasBuiltin'},
-  { id: 43, name: 'linkerTransform'},
-  { id: 44, name: 'linkerResolve'},
-  { id: 45, name: 'linkerWarmup'},
+  { id: 36, name: 'entry' },
+  { id: 37, name: 'read' },
+  { id: 38, name: 'exists' },
+  { id: 39, name: 'clientReady' },
+  { id: 40, name: 'clientExists' },
+  { id: 41, name: 'sessionClosed' },
+  { id: 42, name: 'reported' }
 
 
 
