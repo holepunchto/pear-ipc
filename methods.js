@@ -40,9 +40,8 @@ const methods = [
   { id: 37, name: 'read' },
   { id: 38, name: 'exists' },
   { id: 39, name: 'clientReady' },
-  { id: 40, name: 'clientExists' },
-  { id: 41, name: 'sessionClosed' },
-  { id: 42, name: 'reported' }
+  { id: 40, name: 'appClosed' },
+  { id: 41, name: 'reported' }
 
 
 
