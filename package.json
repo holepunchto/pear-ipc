@@ -19,7 +19,7 @@
   "author": "Holepunch",
   "license": "Apache-2.0",
   "dependencies": {
-    "bare-fs": "^3.0.2",
+    "bare-fs": "^4.0.1",
     "bare-os": "^3.2.0",
     "bare-path": "^3.0.0",
     "bare-pipe": "^3.3.7",
