@@ -34,7 +34,8 @@ const methods = [
   { id: 31, name: 'encryptionKey', stream: true },
   { id: 32, name: 'trusted' },
   { id: 33, name: 'touch', stream: true },
-  { id: 34, name: '_ping' }
+  { id: 34, name: '_ping' },
+  { id: 35, name: 'data', stream: true },
 ]
 
 module.exports = methods
