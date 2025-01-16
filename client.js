@@ -49,8 +49,7 @@ class PearIPCClient extends ReadyResource {
 
   async _open () {
     if (this._rawStream === null) {
-      if (this.#connect) await this._connect()
-      else this._serve()
+      await this._connect()
     }
   }
 

@@ -230,7 +230,6 @@ class PearIPCServer extends ReadyResource {
         })
       })
     }
-    this._rpc.destroy()
   }
 }
 
