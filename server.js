@@ -84,7 +84,7 @@ class PearIPCServer extends ReadyResource {
     this.id = id
     this._stream = new FramedStream(this._rawStream)
 
-    this._rpc = new RPC((data) => { this._stream.write(data) })
+    this._rpc = new RPC((data) => { this._stream?.write(data) })
     this._stream.on('data', (data) => { this._rpc.recv(data) })
     this._stream.on('end', () => { this._stream.end() })
     this._stream.on('error', this._onclose)
