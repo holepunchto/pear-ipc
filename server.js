@@ -211,8 +211,23 @@ class PearIPCServer extends ReadyResource {
     })
   }
 
+  async _endRPCStreams () {
+    return Promise.all(this._rpc._handlers
+      .flatMap((handler) => handler?._streams)
+      .filter(stream => stream && !stream.destroyed)
+      .map((stream) => new Promise(
+        (resolve) => {
+          stream.on('close', resolve)
+          stream.end()
+        }
+      ))
+    )
+  }
+
   async _close () { // never throws, must never throw
     clearInterval(this._heartbeat)
+
+    await this._endRPCStreams()
 
     if (this._stream) {
       await this._waitForClose()
