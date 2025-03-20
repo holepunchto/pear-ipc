@@ -19,7 +19,7 @@ class API extends Internal {
   }
 
   wakeup (method) {
-    return (link, storage, appdev) => method.request({ args: [link, storage, appdev] })
+    return (link, storage, appdev, selfawake) => method.request({ args: [link, storage, appdev, selfawake] })
   }
 
   shutdown (method) {
