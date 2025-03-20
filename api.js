@@ -27,19 +27,25 @@ class API extends Internal {
       if (this.#ipc.closed || this.#ipc.closing) return
       this._pinging = false
       method.send()
-      let tries = 0
       const fd = await new Promise((resolve, reject) => {
-        const interval = setInterval(() => {
+        let tries = 0
+        let interval = null
+        const poll = () => {
           fs.open(this.#ipc._lock, 'r+', (err, fd) => {
             if (!err) {
               clearInterval(interval)
               resolve(fd)
             } else {
               tries++
-              if (tries > POLL_MAX_TRIES) reject(err)
+              if (tries > POLL_MAX_TRIES) {
+                clearInterval(interval)
+                reject(err)
+              }
             }
           })
-        }, LOCK_POLL_INTERVAL)
+        }
+        interval = setInterval(poll, LOCK_POLL_INTERVAL)
+        poll()
       })
 
       await fsext.waitForLock(fd)
