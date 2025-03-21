@@ -1,4 +1,5 @@
 'use strict'
+const streamx = require('streamx')
 const { isBare } = require('which-runtime')
 const Pipe = require('net') // import mapped to bare-pipe, less resolves
 const path = require('path')
@@ -83,10 +84,11 @@ class PearIPCClient extends ReadyResource {
   }
 
   _createStreamMethod (method) {
-    return (params = {}) => {
+    return (params = {}, cb) => {
       const stream = method.createRequestStream()
       stream.on('end', () => { stream.end() })
       stream.write(params)
+      if (cb) streamx.Writable.drained(stream).then(() => cb(null), cb)
       return stream
     }
   }
