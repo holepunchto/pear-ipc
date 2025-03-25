@@ -22,7 +22,7 @@
     "bare-fs": "^4.0.1",
     "bare-os": "^3.2.0",
     "bare-path": "^3.0.0",
-    "bare-pipe": "^3.3.7",
+    "bare-pipe": "^4.0.5",
     "framed-stream": "^1.0.1",
     "fs-native-extensions": "^1.2.7",
     "ready-resource": "^1.0.3",
