@@ -35,15 +35,14 @@ const methods = [
   { id: 32, name: 'trusted' },
   { id: 33, name: 'touch', stream: true },
   { id: 34, name: '_ping' },
-  { id: 35, name: 'reset', stream: true },
+  { id: 35, name: 'drop', stream: true },
   { id: 36, name: 'data', stream: true },
   { id: 37, name: 'get' },
   { id: 38, name: 'entry' },
   { id: 39, name: 'exists' },
   { id: 40, name: 'compare' },
   { id: 41, name: 'reported' },
-  { id: 42, name: 'dataReset', stream: true },
-  { id: 43, name: 'presets', stream: true }
+  { id: 42, name: 'presets', stream: true }
 ]
 
 module.exports = methods
