@@ -10,7 +10,7 @@ test('ipc request', async (t) => {
   t.plan(1)
   const server = new Server({
     socketPath,
-    handlers: { start: (params) => params.result }
+    handlers: { get: (params) => params.result }
   })
   t.teardown(() => server.close())
   const client = new Client({
@@ -20,14 +20,14 @@ test('ipc request', async (t) => {
 
   await server.ready()
   await client.ready()
-  t.is(await client.start({ result: 'good' }), 'good')
+  t.is(await client.get({ result: 'good' }), 'good')
 })
 
 test('ipc request api wrapped', async (t) => {
   t.plan(1)
 
   const api = {
-    start (method) {
+    get (method) {
       return async (params) => {
         const result = await method.request(params)
         return 'very ' + result
@@ -37,7 +37,7 @@ test('ipc request api wrapped', async (t) => {
 
   const server = new Server({
     socketPath,
-    handlers: { start: (params) => params.result }
+    handlers: { get: (params) => params.result }
   })
   t.teardown(() => server.close())
   const client = new Client({
@@ -48,7 +48,7 @@ test('ipc request api wrapped', async (t) => {
   t.teardown(() => server.close())
   await server.ready()
   await client.ready()
-  t.is(await client.start({ result: 'good' }), 'very good')
+  t.is(await client.get({ result: 'good' }), 'very good')
 })
 
 test('ipc stream', async (t) => {
@@ -192,8 +192,7 @@ test('ipc stream w/ opts.onpipeline', async (t) => {
 test('ipc client close when heartbeat fails', async (t) => {
   t.plan(2)
   const server = new Server({
-    socketPath,
-    handlers: { start: (params) => params.result }
+    socketPath
   })
   t.teardown(() => server.close())
   const client = new Client({
