@@ -185,7 +185,10 @@ class PearIPCServer extends ReadyResource {
     this._heartbeat = setInterval(() => {
       for (const client of this.clients) {
         client._clock--
-        if (client._clock <= 0) client.close()
+        if (client._clock <= 0) {
+          client._forceClose = true
+          client.close()
+        }
       }
     }, constants.HEARTBEAT_INTERVAL)
     this._rpc = new RPC(noop)
@@ -206,7 +209,11 @@ class PearIPCServer extends ReadyResource {
         resolve()
       } else {
         this._stream.once('close', resolve)
-        this._stream.end()
+        if (!this._forceClose) {
+          this._stream.end()
+        } else {
+          this._stream.destroy()
+        }
       }
     })
   }
