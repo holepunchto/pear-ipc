@@ -190,7 +190,7 @@ test('ipc stream w/ opts.onpipeline', async (t) => {
 })
 
 test('ipc client close when heartbeat fails', async (t) => {
-  t.plan(2)
+  t.plan(4)
   const server = new Server({
     socketPath,
     handlers: { start: (params) => params.result }
@@ -223,6 +223,15 @@ test('ipc client close when heartbeat fails', async (t) => {
     t.pass('client closed by server when heartbeat fails')
     t.is(pinged, true)
   })
+
+  server.on('client', (c) => {
+    c._stream.destroy = () => {
+      t.pass('stream destroy called')
+      t.is(c.clock, 0)
+      client._stream.end()
+    }
+  })
+
   await server.ready()
   await client.ready()
   client._beat = () => {} // simulate heartbeat failure
