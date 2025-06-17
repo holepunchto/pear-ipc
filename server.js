@@ -31,7 +31,7 @@ class PearIPCServer extends ReadyResource {
     this.#connect = opts.connect || null
     this._rpc = null
     this._clients = new Freelist()
-    this._clock = constants.HEARBEAT_CLOCK
+    this.clock = constants.HEARBEAT_CLOCK
     this._internalHandlers = null
 
     this._server = null
@@ -92,7 +92,7 @@ class PearIPCServer extends ReadyResource {
 
     this._internalHandlers = {
       _ping: (_, client) => {
-        client._clock = constants.HEARBEAT_CLOCK
+        client.clock = constants.HEARBEAT_CLOCK
         return { beat: 'pong' }
       }
     }
@@ -184,9 +184,8 @@ class PearIPCServer extends ReadyResource {
     })
     this._heartbeat = setInterval(() => {
       for (const client of this.clients) {
-        client._clock--
-        if (client._clock <= 0) {
-          client._forceClose = true
+        client.clock--
+        if (client.clock <= 0) {
           client.close()
         }
       }
@@ -209,7 +208,7 @@ class PearIPCServer extends ReadyResource {
         resolve()
       } else {
         this._stream.once('close', resolve)
-        if (!this._forceClose) {
+        if (!this.clock <= 0) {
           this._stream.end()
         } else {
           this._stream.destroy()
