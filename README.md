@@ -67,6 +67,7 @@ Default method declarations can be found in [methods.js](methods.js).
 * `ipc.opened` - Boolean. Server has started
 * `ipc.closing` - Promise that resolves on close
 * `ipc.closed` - Boolean. Server has shutdown
+* `ipc.clients.clock` - A heartbeat counter. If it reaches 0, the client is considered unresponsive and its stream is destroyed
 
 #### Base Client Properties
 
