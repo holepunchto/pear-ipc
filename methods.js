@@ -43,8 +43,11 @@ const methods = [
   { id: 40, name: 'compare' },
   { id: 41, name: 'reported' },
   { id: 42, name: 'dataReset', stream: true },
-  { id: 43, name: 'presets', stream: true },
-  { id: 44, name: 'updated' }
+  { id: 43, name: 'updated' },
+  { id: 44, name: 'getAsset' }, // do not port
+  { id: 45, name: 'reserveAssetPath' }, // do not port
+  { id: 45, name: 'retrieveAssetPath' }, // do not port
+  { id: 46, name: 'addAsset' } // do not port
 ]
 
 module.exports = methods
