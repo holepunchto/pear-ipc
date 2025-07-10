@@ -9,7 +9,7 @@ const PEAR_DIR = global.Pear?.config.pearDir || (isMac
     : path.join(os.homedir(), '.config', 'pear'))
 
 const CONNECT_TIMEOUT = 20_000
-const HEARTBEAT_INTERVAL = 1500
+const HEARTBEAT_INTERVAL = 2000
 const HEARBEAT_CLOCK = 5
 const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'opening', 'opened', 'close', 'closing', 'closed'])
 
