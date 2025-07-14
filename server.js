@@ -185,6 +185,9 @@ class PearIPCServer extends ReadyResource {
     this._heartbeat = setInterval(() => {
       for (const client of this.clients) {
         client.clock--
+        if (client.clock < 17) {
+          console.log(`client event loop unresponsive for ${constants.HEARBEAT_CLOCK - client.clock * constants.HEARTBEAT_INTERVAL} ms`)
+        }
         if (client.clock <= 0) {
           client.close()
         }
