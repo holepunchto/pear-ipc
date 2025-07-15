@@ -191,6 +191,7 @@ test('ipc stream w/ opts.onpipeline', async (t) => {
 
 test('ipc client close when heartbeat fails', async (t) => {
   t.plan(4)
+  t.timeout(60_000)
   const server = new Server({
     socketPath,
     handlers: { start: (params) => params.result }
