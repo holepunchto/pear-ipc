@@ -10,13 +10,15 @@ const PEAR_DIR = global.Pear?.config.pearDir || (isMac
 
 const CONNECT_TIMEOUT = 20_000
 const HEARTBEAT_INTERVAL = 1500
-const HEARBEAT_CLOCK = 20
+const HEARTBEAT_CLOCK = 20
+const HEARTBEAT_THRESHOLD = 3
 const ILLEGAL_METHODS = new Set(['id', 'userData', 'clients', 'hasClients', 'client', 'ref', 'unref', 'ready', 'opening', 'opened', 'close', 'closing', 'closed'])
 
 module.exports = {
   PEAR_DIR,
   CONNECT_TIMEOUT,
   HEARTBEAT_INTERVAL,
-  HEARBEAT_CLOCK,
+  HEARTBEAT_CLOCK,
+  HEARTBEAT_THRESHOLD,
   ILLEGAL_METHODS
 }
