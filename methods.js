@@ -44,9 +44,12 @@ const methods = [
   { id: 41, name: 'reported' },
   { id: 42, name: 'dataReset', stream: true },
   { id: 43, name: 'updated' },
-  { id: 44, name: 'inspect' },
-  { id: 45, name: 'getAsset' }, // do not port
-  { id: 46, name: 'addAsset' } // do not port
+  { id: 44, name: 'getAsset' }, // do not port
+  { id: 45, name: 'reserveAssetPath' }, // do not port
+  { id: 46, name: 'retrieveAssetPath' }, // do not port
+  { id: 47, name: 'addAsset' }, // do not port
+  { id: 48, name: 'inspect' },
+  { id: 49, name: 'allocatedAssets' } // do not port
 ]
 
 module.exports = methods
