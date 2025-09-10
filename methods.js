@@ -43,7 +43,8 @@ const methods = [
   { id: 40, name: 'compare' },
   { id: 41, name: 'reported' },
   { id: 42, name: 'cutover' },
-  { id: 43, name: 'inspect' }
+  { id: 43, name: 'inspect' },
+  { id: 44, name: 'build' }
 ]
 
 module.exports = methods
