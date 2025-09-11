@@ -17,7 +17,7 @@ const methods = [
   { id: 14, name: 'wakeup' },
   { id: 15, name: 'warming', stream: true },
   { id: 16, name: 'warmup' },
-  { id: 17, name: 'start' },
+  { id: 17, name: 'run', stream: true },
   { id: 18, name: 'restart' },
   { id: 19, name: 'unloading' },
   { id: 20, name: 'closeClients' },
@@ -42,9 +42,8 @@ const methods = [
   { id: 39, name: 'exists' },
   { id: 40, name: 'compare' },
   { id: 41, name: 'reported' },
-  { id: 42, name: 'run', stream: true },
-  { id: 43, name: 'cutover' },
-  { id: 44, name: 'list', stream: true },
+  { id: 42, name: 'cutover' },
+  { id: 43, name: 'list', stream: true },
   { id: 48, name: 'inspect' }
 ]
 
