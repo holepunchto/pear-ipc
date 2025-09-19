@@ -13,12 +13,14 @@ const constants = require('./constants')
 
 class PearIPCClient extends ReadyResource {
   #connect = null
-  constructor (opts = {}) {
+  constructor(opts = {}) {
     super()
     this._opts = opts
     this._socketPath = opts.socketPath
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    this._lock = opts.lock || path.join(constants.PEAR_DIR, 'corestores', 'platform', 'db', 'LOCK')
+    this._lock =
+      opts.lock ||
+      path.join(constants.PEAR_DIR, 'corestores', 'platform', 'db', 'LOCK')
     const api = new API(this)
     if (opts.api) Object.assign(api, opts.api)
     this._api = api
@@ -35,30 +37,36 @@ class PearIPCClient extends ReadyResource {
     this._onclose = this.close.bind(this)
   }
 
-  ref () {
+  ref() {
     this._heartbeat?.ref()
     this._timeout?.ref()
     if (this._rawStream?.ref) this._rawStream.ref()
   }
 
-  unref () {
+  unref() {
     this._heartbeat?.unref()
     this._timeout?.unref()
     if (this._rawStream?.unref) this._rawStream.unref()
   }
 
-  async _open () {
+  async _open() {
     if (this._rawStream === null) {
       await this._connect()
     }
   }
 
-  _setup () {
+  _setup() {
     this._stream = new FramedStream(this._rawStream)
 
-    this._rpc = new RPC((data) => { this._stream.write(data) })
-    this._stream.on('data', (data) => { this._rpc.recv(data) })
-    this._stream.on('end', () => { this._stream.end() })
+    this._rpc = new RPC((data) => {
+      this._stream.write(data)
+    })
+    this._stream.on('data', (data) => {
+      this._rpc.recv(data)
+    })
+    this._stream.on('end', () => {
+      this._stream.end()
+    })
     this._stream.on('error', this._onclose)
     this._stream.on('close', this._onclose)
 
@@ -70,28 +78,34 @@ class PearIPCClient extends ReadyResource {
     this._beat()
   }
 
-  async _beat () {
-    try { await this._ping() } catch { /* ignore */ }
+  async _beat() {
+    try {
+      await this._ping()
+    } catch {
+      /* ignore */
+    }
   }
 
-  _createSendMethod (method) {
+  _createSendMethod(method) {
     return (params = {}) => method.send(params)
   }
 
-  _createRequestMethod (method) {
+  _createRequestMethod(method) {
     return (params = {}) => method.request(params)
   }
 
-  _createStreamMethod (method) {
+  _createStreamMethod(method) {
     return (params = {}) => {
       const stream = method.createRequestStream()
-      stream.on('end', () => { stream.end() })
+      stream.on('end', () => {
+        stream.end()
+      })
       stream.write(params)
       return stream
     }
   }
 
-  _createMethod (definition) {
+  _createMethod(definition) {
     if (definition.send) {
       return this._createSendMethod
     }
@@ -103,19 +117,24 @@ class PearIPCClient extends ReadyResource {
     return this._createStreamMethod
   }
 
-  _register () {
+  _register() {
     for (const { id, ...def } of this._methods) {
-      if (constants.ILLEGAL_METHODS.has(def.name)) throw new Error('Illegal Method: ' + def.name)
-      const api = this._api[def.name]?.bind(this._api) || this._createMethod(def)
+      if (constants.ILLEGAL_METHODS.has(def.name))
+        throw new Error('Illegal Method: ' + def.name)
+      const api =
+        this._api[def.name]?.bind(this._api) || this._createMethod(def)
 
-      this[def.name] = api(this._rpc.register(+id, {
-        request: any,
-        response: any
-      }), this)
+      this[def.name] = api(
+        this._rpc.register(+id, {
+          request: any,
+          response: any
+        }),
+        this
+      )
     }
   }
 
-  _pipe () {
+  _pipe() {
     if (isBare) return new Pipe(this._socketPath)
     const sock = new Pipe.Socket()
     sock.setNoDelay(true)
@@ -123,7 +142,7 @@ class PearIPCClient extends ReadyResource {
     return sock
   }
 
-  async _connect () {
+  async _connect() {
     let trycount = 0
     let timedout = false
     let next = null
@@ -147,16 +166,21 @@ class PearIPCClient extends ReadyResource {
     }
 
     while (!this.closing) {
-      const promise = new Promise((resolve) => { next = resolve })
+      const promise = new Promise((resolve) => {
+        next = resolve
+      })
       this._rawStream = this._pipe(this._socketPath)
       this._rawStream.on('connect', onconnect)
       this._rawStream.on('error', onerror)
 
       if (await promise) break
       if (timedout) throw new Error('Could not connect in time')
-      if (trycount++ === 0 && typeof this.#connect === 'function') this.#connect()
+      if (trycount++ === 0 && typeof this.#connect === 'function')
+        this.#connect()
 
-      await new Promise((resolve) => setTimeout(resolve, trycount < 2 ? 5 : trycount < 10 ? 10 : 100))
+      await new Promise((resolve) =>
+        setTimeout(resolve, trycount < 2 ? 5 : trycount < 10 ? 10 : 100)
+      )
     }
 
     clearTimeout(this._timeout)
@@ -168,7 +192,7 @@ class PearIPCClient extends ReadyResource {
     }
   }
 
-  _waitForClose () {
+  _waitForClose() {
     return new Promise((resolve) => {
       if (this._stream.destroyed) {
         resolve()
@@ -179,7 +203,8 @@ class PearIPCClient extends ReadyResource {
     })
   }
 
-  async _close () { // never throws, must never throw
+  async _close() {
+    // never throws, must never throw
     clearInterval(this._heartbeat)
     clearTimeout(this._timeout)
 

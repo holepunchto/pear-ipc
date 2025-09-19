@@ -7,22 +7,25 @@ const POLL_MAX_TRIES = 20
 
 class Internal {
   _pinging = true
-  _ping (method) { return () => this._pinging && method.request({ beat: 'ping' }) }
+  _ping(method) {
+    return () => this._pinging && method.request({ beat: 'ping' })
+  }
 }
 
 class API extends Internal {
   #ipc = null
 
-  constructor (ipc) {
+  constructor(ipc) {
     super()
     this.#ipc = ipc
   }
 
-  wakeup (method) {
-    return (link, storage, appdev, selfwake, startId) => method.request({ args: [link, storage, appdev, selfwake, startId] })
+  wakeup(method) {
+    return (link, storage, appdev, selfwake, startId) =>
+      method.request({ args: [link, storage, appdev, selfwake, startId] })
   }
 
-  shutdown (method) {
+  shutdown(method) {
     return async () => {
       if (this.#ipc.closed || this.#ipc.closing) return
       this._pinging = false
@@ -50,13 +53,15 @@ class API extends Internal {
 
       await fsext.waitForLock(fd)
       fsext.unlock(fd)
-      await new Promise((resolve, reject) => fs.close(fd, (err) => {
-        if (err) {
-          reject(err)
-          return
-        }
-        resolve()
-      }))
+      await new Promise((resolve, reject) =>
+        fs.close(fd, (err) => {
+          if (err) {
+            reject(err)
+            return
+          }
+          resolve()
+        })
+      )
       await this.#ipc.close()
     }
   }
