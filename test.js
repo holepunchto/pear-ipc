@@ -27,7 +27,7 @@ test('ipc request api wrapped', async (t) => {
   t.plan(1)
 
   const api = {
-    get (method) {
+    get(method) {
       return async (params) => {
         const result = await method.request(params)
         return 'very ' + result
@@ -117,7 +117,7 @@ test('ipc stream api wrapped', async (t) => {
     socketPath,
     connect: true,
     api: {
-      messages (method) {
+      messages(method) {
         return (params) => {
           const stream = method.createRequestStream()
           stream.write({ result: 'very ' + params.result })
@@ -146,7 +146,7 @@ test('ipc stream w/ opts.onpipeline', async (t) => {
   let serverStream = null
   const server = new Server({
     socketPath,
-    onpipeline (src, dst) {
+    onpipeline(src, dst) {
       t.is(src, serverStream)
       t.is(src._readableState.pipeTo, dst)
     },
