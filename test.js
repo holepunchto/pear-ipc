@@ -188,6 +188,28 @@ test('ipc stream w/ opts.onpipeline', async (t) => {
   }
 })
 
+test('server client.at timestamp', async (t) => {
+  t.plan(3)
+  const server = new Server({
+    socketPath,
+    handlers: { get: (params) => params.result }
+  })
+  server.on('client', (client) => {
+    t.ok(Number.isInteger(client.at))
+    t.ok(Date.now() > client.at)
+  })
+  t.teardown(() => server.close())
+  const client = new Client({
+    socketPath,
+    connect: true
+  })
+
+  await server.ready()
+  await client.ready()
+
+  t.is(await client.get({ result: 'good' }), 'good')
+})
+
 test('ipc client close when heartbeat fails', async (t) => {
   t.plan(4)
   const server = new Server({

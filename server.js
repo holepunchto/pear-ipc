@@ -46,6 +46,7 @@ class PearIPCServer extends ReadyResource {
       })
 
     this.id = null
+    this.at = Date.now()
     this.userData = opts.userData || null
 
     this._onclose = this.close.bind(this)
