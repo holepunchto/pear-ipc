@@ -196,7 +196,7 @@ test('server client.at timestamp', async (t) => {
   })
   server.on('client', (client) => {
     t.ok(Number.isInteger(client.at))
-    t.ok(Date.now() > client.at)
+    t.ok(Date.now() >= client.at)
   })
   t.teardown(() => server.close())
   const client = new Client({
