@@ -210,8 +210,8 @@ test('server client.at timestamp', async (t) => {
   t.is(await client.get({ result: 'good' }), 'good')
 })
 
-test('ipc client close when heartbeat fails', async (t) => {
-  t.plan(4)
+test('ipc client clock reaches 0 if client does not responde', async (t) => {
+  t.plan(2)
   const server = new Server({
     socketPath
   })
@@ -239,20 +239,14 @@ test('ipc client close when heartbeat fails', async (t) => {
   Client.prototype._register = function (...args) {
     return clientRegister.apply(this, args)
   }
-  client.once('close', () => {
-    t.pass('client closed by server when heartbeat fails')
-    t.is(pinged, true)
-  })
-
-  server.on('client', (c) => {
-    c._stream.destroy = () => {
-      t.pass('stream destroy called')
-      t.is(c.clock, 0)
-      client._stream.end()
-    }
-  })
 
   await server.ready()
   await client.ready()
-  client._beat = () => {} // simulate heartbeat failure
+
+  client._beat = () => {
+    if (server.clients[0].clock === 0) {
+      t.is(pinged, true)
+      t.pass()
+    }
+  } // simulate heartbeat failure
 })
