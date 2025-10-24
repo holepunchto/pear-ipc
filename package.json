@@ -1,6 +1,6 @@
 {
   "name": "pear-ipc",
-  "version": "6.6.3",
+  "version": "6.7.0",
   "description": "IPC for Pear",
   "main": "index.js",
   "scripts": {
