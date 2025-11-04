@@ -210,7 +210,7 @@ test('server client.at timestamp', async (t) => {
   t.is(await client.get({ result: 'good' }), 'good')
 })
 
-test('ipc client clock reaches 0 if client does not responde', async (t) => {
+test('ipc client clock reaches 0 if client does not respond', async (t) => {
   t.plan(2)
   const server = new Server({
     socketPath

@@ -80,6 +80,10 @@ Default method declarations can be found in [methods.js](methods.js).
 - `ipc.closing` - Promise that resolves on close
 - `ipc.closed` - Boolean. Client has disconnected
 
+### `require('pear-ipc/raw-client') | import 'pear-ipc' from 'pear-ipc/raw-client'`
+
+Same API as `IPC.Client` except without heartbeat and without API enhancement per [./api.js](./api.js), no natives. This is useful for situations where a temporary initialization client is needed in an precursory environment that does not support natives (eg electron renderer process).
+
 ## License
 
 Apache-2.0

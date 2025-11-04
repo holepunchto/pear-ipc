@@ -1,7 +1,6 @@
 const { isWindows, isMac } = require('which-runtime')
 const path = require('path')
 const os = require('os')
-
 const PEAR_DIR =
   global.Pear?.config.pearDir ||
   (isMac
@@ -9,7 +8,7 @@ const PEAR_DIR =
     : isWindows
       ? path.join(os.homedir(), 'AppData', 'Roaming', 'pear')
       : path.join(os.homedir(), '.config', 'pear'))
-
+const PLATFORM_LOCK = path.join(PEAR_DIR, 'pear.lock')
 const CONNECT_TIMEOUT = 20_000
 const HEARTBEAT_INTERVAL = 2000
 const HEARBEAT_CLOCK = 5
@@ -30,6 +29,7 @@ const ILLEGAL_METHODS = new Set([
 ])
 
 module.exports = {
+  PLATFORM_LOCK,
   PEAR_DIR,
   CONNECT_TIMEOUT,
   HEARTBEAT_INTERVAL,
