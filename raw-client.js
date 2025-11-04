@@ -16,9 +16,7 @@ class PearIPCRawClient extends ReadyResource {
     this._opts = opts
     this._socketPath = opts.socketPath
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    this._lock =
-      opts.lock ||
-      path.join(constants.PEAR_DIR, 'corestores', 'platform', 'db', 'LOCK')
+    this._lock = opts.lock || constants.PLATFORM_LOCK
     this._connectTimeout = opts.connectTimeout || constants.CONNECT_TIMEOUT
     this.#connect = opts.connect || null
     this._rpc = null
@@ -102,7 +100,7 @@ class PearIPCRawClient extends ReadyResource {
       if (constants.ILLEGAL_METHODS.has(def.name))
         throw new Error('Illegal Method: ' + def.name)
       const api =
-        this._api[def.name]?.bind(this._api) || this._createMethod(def)
+        this._api?.[def.name]?.bind(this._api) || this._createMethod(def)
 
       this[def.name] = api(
         this._rpc.register(+id, {
