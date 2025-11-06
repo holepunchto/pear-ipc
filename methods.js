@@ -44,7 +44,8 @@ const methods = [
   { id: 41, name: 'reported' },
   { id: 42, name: 'cutover' },
   { id: 43, name: 'list', stream: true },
-  { id: 48, name: 'inspect' }
+  { id: 48, name: 'inspect' },
+  { id: 49, name: 'presets', stream: true }
 ]
 
 module.exports = methods
