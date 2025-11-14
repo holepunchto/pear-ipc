@@ -209,7 +209,6 @@ class PearIPCClient extends ReadyResource {
       this._rawStream = null
       this._stream = null
     }
-    this._rpc.destroy()
   }
 }
 
