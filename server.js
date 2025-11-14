@@ -1,7 +1,6 @@
 'use strict'
 const { isBare, isWindows } = require('which-runtime')
 const Pipe = require('net') // import mapped to bare-pipe, less resolves
-const path = require('path')
 const fs = require('fs')
 const streamx = require('streamx')
 const RPC = require('tiny-buffer-rpc')
@@ -23,9 +22,6 @@ class PearIPCServer extends ReadyResource {
     this._socketPath = opts.socketPath
     this._handlers = opts.handlers || {}
     this._methods = opts.methods ? [...methods, ...opts.methods] : methods
-    this._lock =
-      opts.lock ||
-      path.join(constants.PEAR_DIR, 'corestores', 'platform', 'db', 'LOCK')
     const api = new API(this)
     if (opts.api) Object.assign(api, opts.api)
     this._api = api

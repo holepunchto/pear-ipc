@@ -1,8 +1,4 @@
 'use strict'
-const LockFile = require('fs-native-lock')
-
-const LOCK_POLL_INTERVAL = 500
-const POLL_MAX_TRIES = 20
 
 class Internal {
   _pinging = true
@@ -29,9 +25,6 @@ class API extends Internal {
       if (this.#ipc.closed || this.#ipc.closing) return
       this._pinging = false
       method.send()
-      const platformLock = new LockFile(this.#ipc._lock, { wait: true })
-      await platformLock.lock()
-      await platformLock.unlock()
       await this.#ipc.close()
     }
   }
