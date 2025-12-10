@@ -115,8 +115,9 @@ class PearIPCClient extends ReadyResource {
 
   _register() {
     for (const { id, ...def } of this._methods) {
-      if (constants.ILLEGAL_METHODS.has(def.name))
+      if (constants.ILLEGAL_METHODS.has(def.name)) {
         throw new Error('Illegal Method: ' + def.name)
+      }
       const api =
         this._api[def.name]?.bind(this._api) || this._createMethod(def)
 
@@ -171,8 +172,9 @@ class PearIPCClient extends ReadyResource {
 
       if (await promise) break
       if (timedout) throw new Error('Could not connect in time')
-      if (trycount++ === 0 && typeof this.#connect === 'function')
+      if (trycount++ === 0 && typeof this.#connect === 'function') {
         this.#connect()
+      }
 
       await new Promise((resolve) =>
         setTimeout(resolve, trycount < 2 ? 5 : trycount < 10 ? 10 : 100)

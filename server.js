@@ -148,8 +148,9 @@ class PearIPCServer extends ReadyResource {
 
   _register() {
     for (const { id, ...def } of this._methods) {
-      if (constants.ILLEGAL_METHODS.has(def.name))
+      if (constants.ILLEGAL_METHODS.has(def.name)) {
         throw new Error('Illegal Method: ' + def.name)
+      }
       const fn =
         this._handlers[def.name] || this._internalHandlers?.[def.name] || null
       const callHandler = (params = {}) => fn.call(this._handlers, params, this)
@@ -189,11 +190,13 @@ class PearIPCServer extends ReadyResource {
           const isStream = streamx.isStream(src)
           if (isStream) {
             streamx.pipeline(src, stream)
-            if (typeof this._onpipeline === 'function')
+            if (typeof this._onpipeline === 'function') {
               this._onpipeline(src, stream)
+            }
           } else {
-            if (typeof this._onpipeline === 'function')
+            if (typeof this._onpipeline === 'function') {
               this._onpipeline(src, stream)
+            }
             for await (const data of src) stream.write(data)
             stream.end()
           }
