@@ -56,7 +56,8 @@ const methods = [
   { id: 57, name: 'blindPeer', stream: true },
   { id: 58, name: 'blindRelay', stream: true },
   { id: 59, name: 'relay' },
-  { id: 60, name: 'identity', stream: true }
+  { id: 60, name: 'identity', stream: true },
+  { id: 61, name: 'make', stream: true }
 ]
 
 module.exports = methods
